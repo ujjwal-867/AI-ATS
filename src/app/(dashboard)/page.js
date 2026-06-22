@@ -2,6 +2,7 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import Navbar from "@/components/dashboard/Navbar";
 import StatsCard from "@/components/dashboard/StatsCard";
 import CandidateTable from "@/components/dashboard/CandidateTable";
+
 export default function DashboardPage() {
   return (
     <div className="flex min-h-screen bg-slate-950">
@@ -17,9 +18,6 @@ export default function DashboardPage() {
 
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             <StatsCard
-            <div className="mt-10">
-  <CandidateTable />
-</div>
               title="Total Candidates"
               value="128"
               color="text-blue-400"
@@ -42,6 +40,10 @@ export default function DashboardPage() {
               value="87%"
               color="text-purple-400"
             />
+          </div>
+
+          <div className="mt-10">
+            <CandidateTable />
           </div>
         </main>
       </div>
