@@ -1,32 +1,46 @@
 import mongoose from "mongoose";
 
-const CandidateSchema = new mongoose.Schema(
-  {
-    name: String,
-    email: String,
-    phone: String,
+const CandidateSchema =
+  new mongoose.Schema(
+    {
+      name: String,
+      email: String,
+      phone: String,
 
-    skills: [String],
+      skills: [String],
 
-    score: Number,
+      score: Number,
 
-    matchedSkills: [String],
+      matchedSkills: [String],
 
-    resumeText: String,
+      resumeText: String,
 
-    status: {
-      type: String,
-      enum: ["Pending", "Shortlisted", "Rejected"],
-      default: "Pending",
+      status: {
+        type: String,
+        enum: [
+          "Pending",
+          "Shortlisted",
+          "Rejected",
+        ],
+        default: "Pending",
+      },
+
+      interviewDate: String,
+
+      interviewTime: String,
+
+      meetingLink: String,
     },
-  },
-  {
-    timestamps: true,
-  }
-);
+    {
+      timestamps: true,
+    }
+  );
 
 const Candidate =
   mongoose.models.Candidate ||
-  mongoose.model("Candidate", CandidateSchema);
+  mongoose.model(
+    "Candidate",
+    CandidateSchema
+  );
 
 export default Candidate;
