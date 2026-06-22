@@ -1,0 +1,32 @@
+const skills = [
+  "Python",
+  "Java",
+  "JavaScript",
+  "TypeScript",
+  "C",
+  "C++",
+  "MySQL",
+  "MongoDB",
+  "React",
+  "Next.js",
+  "Node.js",
+  "Express",
+  "Machine Learning",
+  "Deep Learning",
+  "TensorFlow",
+  "PyTorch",
+  "Pandas",
+  "NumPy",
+  "Matplotlib",
+  "Scikit-learn",
+  "Tailwind CSS",
+  "HTML",
+  "CSS",
+  "Git",
+  "GitHub",
+  "AWS",
+  "Docker",
+  "SQL"
+];
+
+export default skills;
