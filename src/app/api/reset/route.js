@@ -1,13 +1,28 @@
+import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Candidate from "@/models/Candidate";
 
 export async function GET() {
-  await connectDB();
+  try {
+    await connectDB();
 
-  await Candidate.deleteMany({});
+    await Candidate.deleteMany();
 
-  return Response.json({
-    success: true,
-    message: "All candidates deleted",
-  });
+    return NextResponse.json({
+      success: true,
+      message:
+        "All candidates deleted",
+    });
+  } catch (error) {
+    console.log(error);
+
+    return NextResponse.json(
+      {
+        success: false,
+      },
+      {
+        status: 500,
+      }
+    );
+  }
 }
