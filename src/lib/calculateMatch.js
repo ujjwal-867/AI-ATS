@@ -16,12 +16,15 @@ export default function calculateMatch(
         .includes(skill.toLowerCase())
   );
 
+  const score =
+    jdSkills.length === 0
+      ? 0
+      : Math.round(
+          (matchedSkills.length / jdSkills.length) * 100
+        );
+
   return {
-    score: Math.round(
-      (matchedSkills.length /
-        jdSkills.length) *
-        100
-    ),
+    score,
     matchedSkills,
     missingSkills,
   };
