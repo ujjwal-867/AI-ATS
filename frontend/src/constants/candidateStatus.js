@@ -1,0 +1,8 @@
+export const CANDIDATE_STATUS = {
+  APPLIED: "Applied",
+  SCREENING: "Screening",
+  SHORTLISTED: "Shortlisted",
+  INTERVIEW: "Interview",
+  OFFER: "Offer",
+  REJECTED: "Rejected",
+};
