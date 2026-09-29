@@ -1,14 +1,13 @@
 "use client";
 
 import {useEffect,useMemo,useState} from "react";
+
 import {
   Search,
   Eye,
   CalendarPlus,
   Mail,
-  Phone,
   Star,
-  Loader2,
 } from "lucide-react";
 
 import {getCandidates} from "@/services/api";
@@ -17,27 +16,28 @@ import {getCandidates} from "@/services/api";
 function badge(status){
 
 if(status==="Hired")
-return "bg-green-100 text-green-700";
+return "bg-green-50 text-green-600";
 
 if(status==="Interview")
-return "bg-blue-100 text-blue-700";
+return "bg-blue-50 text-blue-600";
 
 if(status==="Screening")
-return "bg-yellow-100 text-yellow-700";
+return "bg-cyan-50 text-cyan-600";
 
-if(status==="Rejected")
-return "bg-red-100 text-red-700";
-
-return "bg-slate-100 text-slate-700";
+return "bg-slate-50 text-slate-600";
 
 }
 
 
-export default function CandidateTable(){
 
-const [candidates,setCandidates]=useState([]);
+export default function CandidateTable({
+  onViewCandidate
+}){
+
+
+const [data,setData]=useState([]);
 const [search,setSearch]=useState("");
-const [loading,setLoading]=useState(true);
+
 
 
 useEffect(()=>{
@@ -46,20 +46,17 @@ async function load(){
 
 try{
 
-const data=await getCandidates();
+const result=await getCandidates();
 
-setCandidates(data);
+setData(result);
 
-}catch(error){
+}
+catch(error){
 
 console.log(
 "Candidates error",
 error
 );
-
-}finally{
-
-setLoading(false);
 
 }
 
@@ -71,137 +68,157 @@ load();
 
 
 
-const filtered=useMemo(()=>{
 
-return candidates.filter((c)=>
-(
-`${c.name} ${c.email} ${c.status}`
-)
+const candidates=useMemo(()=>{
+
+return data.filter((c)=>
+
+`${c.name}${c.email}${c.status}`
 .toLowerCase()
 .includes(
 search.toLowerCase()
 )
+
 );
 
-},[search,candidates]);
-
-
-
-if(loading)
-
-return(
-<div className="flex justify-center p-4">
-<Loader2 className="animate-spin text-[#D4AF37]"/>
-</div>
-);
+},[
+data,
+search
+]);
 
 
 
 return(
 
 <section className="
-rounded-2xl
-border
-border-slate-200
 bg-white
-shadow-sm
+py-6
 ">
 
 
 <div className="
+mb-8
 flex
 items-center
 justify-between
-border-b
-p-4
 ">
 
 
 <div>
 
 <h2 className="
-text-xl
+text-3xl
 font-bold
-text-[#111827]
+text-slate-900
 ">
+
 Recent Candidates
+
 </h2>
 
-<p className="text-sm text-slate-500">
+
+<p className="
+mt-2
+text-slate-500
+">
+
 AI ranked applicants
+
 </p>
+
 
 </div>
 
 
-<div className="relative">
+
+<div className="
+relative
+">
+
 
 <Search
+
 size={16}
+
 className="
 absolute
-left-3
+left-4
 top-1/2
 -translate-y-1/2
 text-slate-400
 "
+
 />
+
 
 
 <input
 
 value={search}
 
-onChange={(e)=>setSearch(e.target.value)}
+onChange={(e)=>
+setSearch(e.target.value)
+}
 
-placeholder="Search..."
+placeholder="Search candidates"
 
 className="
-h-10
+h-11
 w-64
 rounded-xl
-border
-pl-9
-pr-3
-outline-none
-focus:border-[#D4AF37]
+bg-slate-50
+pl-11
+pr-4
+text-sm
+text-slate-900
+focus:bg-white
 "
 
 />
 
-</div>
-
 
 </div>
 
 
+</div>
 
-<div className="divide-y">
+
+
+
+
+<div className="
+space-y-4
+">
 
 
 {
-filtered.map((candidate)=>(
+candidates.map((c)=>(
 
 
 <div
 
-key={candidate.id}
+key={c.id}
 
 className="
 flex
 items-center
 justify-between
-p-4
-hover:bg-[#FFFDF5]
+rounded-2xl
+bg-white
+p-5
+transition
+hover:bg-slate-50
 "
 
+
 >
+
 
 
 <div className="
 flex
 items-center
-gap-4
+gap-5
 ">
 
 
@@ -212,43 +229,57 @@ w-12
 items-center
 justify-center
 rounded-full
-bg-[#D4AF37]
+bg-blue-50
 font-bold
-text-black
+text-blue-600
 ">
 
-{candidate.name?.charAt(0)}
+{c.name?.[0]}
 
 </div>
+
 
 
 
 <div>
 
+
 <h3 className="
 font-semibold
-text-[#111827]
+text-slate-900
 ">
-{candidate.name}
+
+{c.name}
+
 </h3>
 
 
-<p className="text-sm text-slate-500">
-{candidate.email}
-</p>
-
-
-<div className="
-mt-1
-flex
-gap-3
-text-xs
+<p className="
+text-sm
 text-slate-500
 ">
 
-<Phone size={12}/>
+{c.email}
 
-{candidate.phone || "N/A"}
+</p>
+
+
+
+<p className="
+mt-1
+text-xs
+text-slate-400
+">
+
+<Mail
+size={12}
+className="inline mr-1"
+/>
+
+{c.phone}
+
+</p>
+
 
 </div>
 
@@ -256,37 +287,35 @@ text-slate-500
 </div>
 
 
-</div>
 
 
 
 <div className="
 flex
 items-center
-gap-3
+gap-4
 ">
 
 
-<div className="
+<span className="
 flex
 items-center
 gap-1
 rounded-full
-bg-[#FFF7DA]
+bg-blue-50
 px-3
 py-1
+text-sm
+font-semibold
+text-blue-600
 ">
 
-<Star
-size={14}
-className="text-[#D4AF37]"
-/>
+<Star size={13}/>
 
-<b>
-{candidate.ats_score}%
-</b>
+{c.ats_score || 0}%
 
-</div>
+</span>
+
 
 
 
@@ -294,23 +323,34 @@ className="text-[#D4AF37]"
 rounded-full
 px-3
 py-1
-text-xs
-font-semibold
-${badge(candidate.status)}
+text-sm
+font-medium
+${badge(c.status)}
 `}>
 
-{candidate.status}
+{c.status}
 
 </span>
 
 
 
-<button className="
-rounded-lg
-border
-p-2
-hover:border-[#D4AF37]
-">
+
+<button
+
+onClick={()=>
+onViewCandidate(c.id)
+}
+
+className="
+rounded-xl
+bg-slate-50
+p-3
+text-slate-600
+hover:bg-blue-50
+hover:text-blue-600
+"
+
+>
 
 <Eye size={16}/>
 
@@ -318,16 +358,26 @@ hover:border-[#D4AF37]
 
 
 
-<button className="
-rounded-lg
+
+
+<a
+
+href={`/interviews?candidate=${c.id}`}
+
+className="
+rounded-xl
 bg-green-600
-p-2
+p-3
 text-white
-">
+hover:bg-green-700
+"
+
+>
 
 <CalendarPlus size={16}/>
 
-</button>
+</a>
+
 
 
 </div>

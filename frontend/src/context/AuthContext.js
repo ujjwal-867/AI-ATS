@@ -1,6 +1,10 @@
 "use client";
 
-import { createContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useEffect,
+  useState,
+} from "react";
 
 import {
   login as loginService,
@@ -8,46 +12,97 @@ import {
   getCurrentUser,
 } from "@/services/auth.service";
 
+
 export const AuthContext = createContext(null);
 
+
 export function AuthProvider({ children }) {
+
   const [user, setUser] = useState(null);
+
   const [loading, setLoading] = useState(true);
 
+
   useEffect(() => {
-    const currentUser = getCurrentUser();
 
-    if (currentUser) {
-      setUser(currentUser);
-    }
+    let mounted = true;
 
-    setLoading(false);
+
+    const loadUser = () => {
+
+      const currentUser = getCurrentUser();
+
+
+      if (mounted) {
+
+        setUser(
+          currentUser || null
+        );
+
+        setLoading(false);
+
+      }
+
+    };
+
+
+    loadUser();
+
+
+    return () => {
+
+      mounted = false;
+
+    };
+
   }, []);
 
-  const login = async (credentials) => {
-    const response = await loginService(credentials);
 
-    setUser(response.user);
+
+  async function login(credentials) {
+
+    const response = await loginService(
+      credentials
+    );
+
+
+    setUser(
+      response.user
+    );
+
 
     return response;
-  };
 
-  const logout = () => {
+  }
+
+
+
+  function logout() {
+
     logoutService();
+
     setUser(null);
-  };
+
+  }
+
+
 
   return (
+
     <AuthContext.Provider
       value={{
         user,
         loading,
         login,
         logout,
-        isAuthenticated: !!user,
+        isAuthenticated: Boolean(user),
       }}
     >
+
       {children}
+
     </AuthContext.Provider>
+
   );
+
 }

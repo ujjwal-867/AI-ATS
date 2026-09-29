@@ -14,25 +14,49 @@ export async function login(credentials) {
   });
 
   if (typeof window !== "undefined") {
-    localStorage.setItem("token", response.access_token);
-
     localStorage.setItem(
-      "user",
-      JSON.stringify(response.user)
+      "token",
+      response.access_token
     );
 
-    document.cookie = `token=${response.access_token}; path=/; max-age=86400; SameSite=Lax`;
+    if (response.user) {
+      localStorage.setItem(
+        "user",
+        JSON.stringify(response.user)
+      );
+    }
+
+    document.cookie =
+      `token=${response.access_token}; ` +
+      `path=/; ` +
+      `max-age=86400; ` +
+      `SameSite=Lax`;
   }
 
   return response;
 }
 
 export function getCurrentUser() {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined") {
+    return null;
+  }
 
-  const user = localStorage.getItem("user");
+  try {
+    const user = localStorage.getItem("user");
 
-  return user ? JSON.parse(user) : null;
+    if (!user) {
+      return null;
+    }
+
+    return JSON.parse(user);
+  } catch (error) {
+    console.error(
+      "Unable to read current user",
+      error
+    );
+
+    return null;
+  }
 }
 
 export function logout() {

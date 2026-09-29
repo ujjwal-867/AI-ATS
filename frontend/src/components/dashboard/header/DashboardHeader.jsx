@@ -1,70 +1,127 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+
 import {
-  CalendarDays,
   Download,
-  Plus,
-  Sparkles,
+  UserPlus,
+  BriefcaseBusiness,
 } from "lucide-react";
 
+import { useRouter } from "next/navigation";
+
 export default function DashboardHeader() {
-  const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const router = useRouter();
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    try {
+      const storedUser =
+        localStorage.getItem("user");
+
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch (error) {
+      console.error(
+        "User loading error:",
+        error
+      );
+    }
+  }, []);
+
+  const firstName =
+    user?.name?.trim()?.split(" ")[0] ||
+    "there";
+
+  const fullName =
+    user?.name ||
+    "Recruiter";
+
+  const role =
+    user?.role ||
+    "HR Recruiter";
+
+  function getGreeting() {
+    const hour = new Date().getHours();
+
+    if (hour < 12) {
+      return "Good Morning";
+    }
+
+    if (hour < 17) {
+      return "Good Afternoon";
+    }
+
+    return "Good Evening";
+  }
+
+  function handleAddCandidate() {
+    router.push("/candidates");
+  }
+
+  function handleCreateJob() {
+    router.push("/jobs");
+  }
+
+  function handleExport() {
+    window.print();
+  }
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 25 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45 }}
-      className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm"
-    >
-      <div className="flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
-        {/* Left */}
+    <section className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <p className="mb-2 text-sm font-medium text-blue-600">
+          {getGreeting()}
+        </p>
 
-        <div>
-          <span className="inline-flex items-center gap-2 rounded-full bg-[#FFF8E1] px-4 py-2 text-sm font-semibold text-[#B8860B]">
-            <Sparkles size={16} />
-            AI Recruitment Platform
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          Welcome back, {firstName}
+        </h1>
+
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+          <span>{fullName}</span>
+
+          <span className="text-slate-300">
+            •
           </span>
 
-          <h1 className="mt-5 text-5xl font-bold tracking-tight text-[#111827]">
-            Welcome back, Ujjwal 👋
-          </h1>
-
-          <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">
-            Manage hiring from one intelligent dashboard.
-          </p>
-
-          <div className="mt-5 flex items-center gap-2 text-slate-500">
-            <CalendarDays size={18} />
-            <span>{today}</span>
-          </div>
-        </div>
-
-        {/* Right */}
-
-        <div className="flex flex-wrap items-center gap-4">
-          <button className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-3 font-semibold text-slate-700 transition hover:border-[#D4AF37] hover:text-[#D4AF37]">
-            <Download size={18} />
-            Export Report
-          </button>
-
-          <button className="flex items-center gap-2 rounded-2xl bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700">
-            <Plus size={18} />
-            Add Candidate
-          </button>
-
-          <button className="flex items-center gap-2 rounded-2xl bg-[#D4AF37] px-6 py-3 font-semibold text-black transition hover:bg-[#E7C75F]">
-            <Plus size={18} />
-            Create Job
-          </button>
+          <span>{role}</span>
         </div>
       </div>
-    </motion.section>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={handleExport}
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+        >
+          <Download size={17} />
+
+          Export Report
+        </button>
+
+        <button
+          type="button"
+          onClick={handleAddCandidate}
+          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+        >
+          <UserPlus size={17} />
+
+          Add Candidate
+        </button>
+
+        <button
+          type="button"
+          onClick={handleCreateJob}
+          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+        >
+          <BriefcaseBusiness size={17} />
+
+          Create Job
+        </button>
+      </div>
+    </section>
   );
 }

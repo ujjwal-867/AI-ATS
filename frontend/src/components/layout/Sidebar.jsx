@@ -1,62 +1,69 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-
 import {
   LayoutDashboard,
   Users,
+  BriefcaseBusiness,
   Upload,
-  Briefcase,
-  BarChart3,
-  CalendarDays,
-  Settings,
   Sparkles,
+  CalendarDays,
+  BarChart3,
+  Settings,
   ChevronLeft,
-  HardDrive,
-  Bell,
-  ShieldCheck,
+  ChevronRight,
+  Database,
+  GitBranch,
 } from "lucide-react";
 
-const menu = [
+import { getCurrentUser } from "@/services/auth.service";
+
+const menuItems = [
   {
-    title: "Dashboard",
+    label: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
   },
   {
-    title: "Candidates",
+    label: "Candidates",
     href: "/candidates",
     icon: Users,
   },
   {
-    title: "Jobs",
+    label: "Jobs",
     href: "/jobs",
-    icon: Briefcase,
+    icon: BriefcaseBusiness,
   },
   {
-    title: "Resume Upload",
+    label: "Resume Upload",
     href: "/upload",
     icon: Upload,
   },
   {
-    title: "AI Matching",
+    label: "AI Matching",
     href: "/match",
     icon: Sparkles,
   },
   {
-    title: "Interviews",
+    label: "Pipeline",
+    href: "/pipeline",
+    icon: GitBranch,
+  },
+  {
+    label: "Interviews",
     href: "/interviews",
     icon: CalendarDays,
   },
   {
-    title: "Analytics",
+    label: "Analytics",
     href: "/analytics",
     icon: BarChart3,
   },
   {
-    title: "Settings",
+    label: "Settings",
     href: "/settings",
     icon: Settings,
   },
@@ -65,235 +72,196 @@ const menu = [
 export default function Sidebar() {
   const pathname = usePathname();
 
+  const [collapsed, setCollapsed] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const currentUser = getCurrentUser();
+    setUser(currentUser);
+
+    const savedState =
+      localStorage.getItem("ai-ats-sidebar-collapsed");
+
+    if (savedState !== null) {
+      setCollapsed(savedState === "true");
+    }
+  }, []);
+
+  function toggleSidebar() {
+    setCollapsed((previous) => {
+      const next = !previous;
+
+      localStorage.setItem(
+        "ai-ats-sidebar-collapsed",
+        String(next)
+      );
+
+      return next;
+    });
+  }
+
   return (
-   <aside className="sticky top-0 flex h-screen w-72 flex-col border-r border-[#E5E7EB] bg-white">
-
+    <motion.aside
+      animate={{
+        width: collapsed ? 84 : 312,
+      }}
+      transition={{
+        duration: 0.25,
+        ease: "easeInOut",
+      }}
+      className="relative flex min-h-screen shrink-0 flex-col border-r border-slate-200 bg-white"
+    >
       {/* Logo */}
+      <div className="flex h-[105px] items-center border-b border-slate-100 px-5">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm">
+            <Sparkles size={24} />
+          </div>
 
-      <div className="border-b border-[#E5E7EB] px-7 py-7">
-
-        <div className="flex items-center justify-between">
-
-          <div className="flex items-center gap-4">
-
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D4AF37] shadow-xl shadow-[#D4AF37]/20">
-
-              <Sparkles className="h-7 w-7 text-black" />
-
-            </div>
-
+          {!collapsed && (
             <div>
-
-              <h1 className="text-2xl font-bold tracking-tight text-[#111827]">
+              <h1 className="text-xl font-bold tracking-tight text-slate-900">
                 AI ATS
               </h1>
 
-              <p className="text-xs uppercase tracking-[0.25em] text-[#D4AF37]">
-                Enterprise
+              <p className="mt-0.5 text-[11px] font-semibold tracking-[0.22em] text-blue-600">
+                ENTERPRISE
               </p>
-
             </div>
-
-          </div>
-
-          <button className="rounded-xl border border-[#E5E7EB] p-2 text-[#B6B8BF] transition hover:border-[#D4AF37] hover:text-[#D4AF37]">
-
-            <ChevronLeft className="h-4 w-4" />
-
-          </button>
-
+          )}
         </div>
-
       </div>
 
+      {/* Collapse button */}
+      <button
+        type="button"
+        onClick={toggleSidebar}
+        aria-label={
+          collapsed
+            ? "Expand sidebar"
+            : "Collapse sidebar"
+        }
+        className="absolute -right-4 top-[104px] z-20 flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-md transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+      >
+        {collapsed ? (
+          <ChevronRight size={16} />
+        ) : (
+          <ChevronLeft size={16} />
+        )}
+      </button>
+
       {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 py-6">
+        <div className="space-y-1">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
 
-      <nav className="flex-1 space-y-2 overflow-y-auto px-5 py-6">
+            const isActive =
+              pathname === item.href ||
+              pathname.startsWith(`${item.href}/`);
 
-        {menu.map((item, index) => {
-
-          const Icon = item.icon;
-
-          const active =
-            pathname === item.href ||
-            pathname.startsWith(item.href + "/");
-
-          return (
-
-            <motion.div
-              key={item.href}
-              initial={{ opacity: 0, x: -15 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{
-                delay: index * 0.05,
-              }}
-            >
-
+            return (
               <Link
+                key={item.href}
                 href={item.href}
-                className={`group flex items-center gap-4 rounded-2xl px-5 py-4 transition-all duration-300 ${
-                  active
-                   ? "bg-gradient-to-r from-[#D4AF37] to-[#E8C45A] text-[#111827] shadow-lg" 
-                    : "text-[#475569] hover:bg-[#FFF8E1] hover:text-[#D4AF37]"
+                title={collapsed ? item.label : undefined}
+                className={`group flex items-center rounded-xl px-4 py-3 text-sm font-medium transition ${
+                  isActive
+                    ? "bg-blue-50 text-blue-600"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                } ${
+                  collapsed
+                    ? "justify-center"
+                    : "gap-4"
                 }`}
               >
-
                 <Icon
-                  className={`h-5 w-5 ${
-                    active
-                      ? "text-black"
-                      : "text-slate-500 group-hover:text-[#D4AF37]"
+                  size={20}
+                  className={`shrink-0 ${
+                    isActive
+                      ? "text-blue-600"
+                      : "text-slate-500 group-hover:text-slate-700"
                   }`}
                 />
 
-                <span className="font-semibold">
-                  {item.title}
-                </span>
-
-                {active && (
-                  <div className="ml-auto h-2 w-2 rounded-full bg-black" />
+                {!collapsed && (
+                  <span>{item.label}</span>
                 )}
-
               </Link>
-
-            </motion.div>
-
-          );
-
-        })}
-
+            );
+          })}
+        </div>
       </nav>
-            {/* Quick Stats */}
 
-      <div className="mx-5 mb-5 rounded-3xl border border-[#E5E7EB] bg-white p-5">
+      {/* Storage */}
+      <div className="border-t border-slate-100 px-4 py-5">
+        {!collapsed ? (
+          <>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+                <Database
+                  size={18}
+                  className="text-blue-600"
+                />
+              </div>
 
-        <div className="flex items-center gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">
+                  Storage
+                </p>
 
-          <div className="rounded-xl bg-[#D4AF37]/10 p-3">
-
-            <HardDrive className="h-5 w-5 text-[#D4AF37]" />
-
-          </div>
-
-          <div>
-
-            <h3 className="font-semibold text-[#111827]">
-              Resume Storage
-            </h3>
-
-            <p className="text-sm text-[#9CA3AF]">
-              7.8 GB of 10 GB
-            </p>
-
-          </div>
-
-        </div>
-
-        <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-200">
-
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: "78%" }}
-            transition={{ duration: 1 }}
-            className="h-full rounded-full bg-[#D4AF37]"
-          />
-
-        </div>
-
-        <div className="mt-4 flex items-center justify-between">
-
-          <span className="text-xs text-[#8B8D93]">
-            Database Usage
-          </span>
-
-          <span className="text-xs font-semibold text-[#D4AF37]">
-            78%
-          </span>
-
-        </div>
-
-      </div>
-
-      {/* Recruiter Card */}
-
-      <div className="border-t border-[#E5E7EB] p-5">
-
-        <div className="rounded-3xl border border-[#E5E7EB] bg-[#FAFAFA] p-5 shadow-sm">
-
-          <div className="flex items-center gap-4">
-
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#D4AF37] text-xl font-bold text-black">
-              U
+                <p className="text-xs text-slate-500">
+                  Storage usage
+                </p>
+              </div>
             </div>
 
-            <div className="flex-1">
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full w-0 rounded-full bg-blue-600" />
+            </div>
+          </>
+        ) : (
+          <div className="flex justify-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+              <Database
+                size={18}
+                className="text-blue-600"
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
-              <h3 className="font-semibold text-[#111827]">
-                Ujjwal Gupta
-              </h3>
+      {/* User */}
+      <div className="border-t border-slate-100 px-4 py-4">
+        <div
+          className={`flex items-center ${
+            collapsed
+              ? "justify-center"
+              : "gap-3"
+          }`}
+        >
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+            {user?.name
+              ? user.name
+                  .charAt(0)
+                  .toUpperCase()
+              : "U"}
+          </div>
 
-              <p className="text-sm text-[#9CA3AF]">
-                HR Administrator
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-800">
+                {user?.name || "User"}
               </p>
 
+              <p className="truncate text-xs text-slate-500">
+                {user?.email || ""}
+              </p>
             </div>
-
-          </div>
-
-          <div className="mt-6 space-y-3">
-
-            <div className="flex items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-4 py-3">
-
-              <div className="flex items-center gap-3">
-
-                <Bell
-                  size={18}
-                  className="text-[#D4AF37]"
-                />
-
-                <span className="text-sm text-[#111827]">
-                  Notifications
-                </span>
-
-              </div>
-
-              <span className="rounded-full bg-[#D4AF37] px-2 py-1 text-xs font-bold text-black">
-                5
-              </span>
-
-            </div>
-
-            <div className="flex items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-4 py-3">
-
-              <div className="flex items-center gap-3">
-
-                <ShieldCheck
-                  size={18}
-                  className="text-[#D4AF37]"
-                />
-
-                <span className="text-sm text-[#111827]">
-                  Enterprise
-                </span>
-
-              </div>
-
-              <span className="text-xs font-semibold text-[#D4AF37]">
-                PRO
-              </span>
-
-            </div>
-
-          </div>
-
-          <button className="mt-6 w-full rounded-2xl bg-[#D4AF37] py-3 text-sm font-bold text-black transition-all duration-200 hover:translate-x-1 hover:bg-[#E7C75F]">
-            View Profile
-          </button>
-
+          )}
         </div>
-
       </div>
-
-    </aside>
+    </motion.aside>
   );
 }

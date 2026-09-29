@@ -5,15 +5,12 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-
 from app.models.user import User
-
 from app.schemas.user import (
     UserRegister,
     UserLogin,
     UserResponse,
 )
-
 from app.utils.security import (
     hash_password,
     verify_password,
@@ -22,6 +19,10 @@ from app.utils.security import (
 
 router = APIRouter()
 
+
+# =========================================================
+# REGISTER
+# =========================================================
 
 @router.post("/register")
 def register(
@@ -41,10 +42,10 @@ def register(
         )
 
     new_user = User(
-    name=user.name,
-    email=user.email,
-    password_hash=hash_password(user.password),
-)
+        name=user.name,
+        email=user.email,
+        password_hash=hash_password(user.password),
+    )
 
     db.add(new_user)
     db.commit()
@@ -52,6 +53,10 @@ def register(
 
     return UserResponse.model_validate(new_user)
 
+
+# =========================================================
+# LOGIN
+# =========================================================
 
 @router.post("/login")
 def login(
@@ -86,5 +91,7 @@ def login(
     return {
         "access_token": token,
         "token_type": "bearer",
-        "user": UserResponse.model_validate(existing_user),
+        "user": UserResponse.model_validate(
+            existing_user
+        ),
     }

@@ -2,6 +2,9 @@
 
 import JDInput from "./JDInput";
 
+import { createJob } from "@/services/api";
+
+
 export default function JobForm({
   jobTitle,
   setJobTitle,
@@ -13,98 +16,182 @@ export default function JobForm({
   setJobDescription,
   onAnalyze,
   loading,
+  setJobId,
 }) {
+
+
+  async function handleCreateJob(){
+
+    try{
+
+      const job = await createJob({
+
+        title: jobTitle,
+
+        company,
+
+        location:"Remote",
+
+        employment_type:"Full Time",
+
+        experience,
+
+        salary:"",
+
+        description:jobDescription,
+
+      });
+
+
+      setJobId(job.id);
+
+
+      onAnalyze(job.id);
+
+
+    }
+    catch(error){
+
+      console.log(
+        "Job creation error",
+        error
+      );
+
+    }
+
+  }
+
+
+
   return (
-    <div className="rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-xl">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white">
+
+    <div className="rounded-3xl bg-white p-6">
+
+
+      <div className="mb-5">
+
+        <h2 className="text-xl font-bold text-slate-900">
           Job Information
         </h2>
 
-        <p className="mt-2 text-slate-400">
-          Enter the job details and let AI find the
-          best candidates.
+        <p className="text-sm text-slate-500">
+          Enter job details and rank candidates using AI.
         </p>
+
       </div>
 
-      <div className="space-y-6">
-        {/* Job Title */}
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-300">
-            Job Title
-          </label>
 
-          <input
-            type="text"
-            value={jobTitle}
-            onChange={(e) =>
-              setJobTitle(e.target.value)
-            }
-            placeholder="Frontend Developer"
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
-          />
-        </div>
 
-        {/* Company */}
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-300">
-            Company
-          </label>
+      <div className="space-y-4">
 
-          <input
-            type="text"
-            value={company}
-            onChange={(e) =>
-              setCompany(e.target.value)
-            }
-            placeholder="Google"
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
-          />
-        </div>
 
-        {/* Experience */}
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-300">
-            Experience Required
-          </label>
+        <input
 
-          <select
-            value={experience}
-            onChange={(e) =>
-              setExperience(e.target.value)
-            }
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
-          >
-            <option>0-2 Years</option>
-            <option>2-4 Years</option>
-            <option>4-6 Years</option>
-            <option>6-8 Years</option>
-            <option>8+ Years</option>
-          </select>
-        </div>
+          value={jobTitle}
 
-        {/* Job Description */}
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-300">
-            Job Description
-          </label>
+          onChange={(e)=>setJobTitle(e.target.value)}
 
-          <JDInput
-            jobDescription={jobDescription}
-            setJobDescription={setJobDescription}
-          />
-        </div>
+          placeholder="Job Title"
+
+          className="
+          w-full
+          rounded-xl
+          bg-slate-50
+          px-4
+          py-3
+          "
+
+        />
+
+
+
+        <input
+
+          value={company}
+
+          onChange={(e)=>setCompany(e.target.value)}
+
+          placeholder="Company"
+
+          className="
+          w-full
+          rounded-xl
+          bg-slate-50
+          px-4
+          py-3
+          "
+
+        />
+
+
+
+        <select
+
+          value={experience}
+
+          onChange={(e)=>setExperience(e.target.value)}
+
+          className="
+          w-full
+          rounded-xl
+          bg-slate-50
+          px-4
+          py-3
+          "
+
+        >
+
+          <option>0-2 Years</option>
+          <option>2-4 Years</option>
+          <option>4-6 Years</option>
+          <option>6+ Years</option>
+
+        </select>
+
+
+
+
+        <JDInput
+
+          jobDescription={jobDescription}
+
+          setJobDescription={setJobDescription}
+
+        />
+
+
+
 
         <button
-          onClick={onAnalyze}
+
+          onClick={handleCreateJob}
+
           disabled={loading}
-          className="w-full rounded-xl bg-indigo-600 px-6 py-4 text-lg font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+
+          className="
+          w-full
+          rounded-xl
+          bg-blue-600
+          py-3
+          font-semibold
+          text-white
+          "
+
         >
-          {loading
-            ? "Analyzing Candidates..."
-            : "Analyze Candidates"}
+
+          {
+            loading
+            ? "Analyzing..."
+            : "Analyze Candidates"
+          }
+
         </button>
+
+
       </div>
+
+
     </div>
+
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import DashboardHeader from "@/components/dashboard/header/DashboardHeader";
 import DashboardStats from "@/components/dashboard/stats/DashboardStats";
@@ -9,60 +9,136 @@ import CandidateTable from "@/components/dashboard/CandidateTable";
 import HiringPipeline from "@/components/dashboard/pipeline/HiringPipeline";
 import AIInsights from "@/components/dashboard/insights/AIInsights";
 
+
 export default function DashboardPage() {
+
   const router = useRouter();
 
-  const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
+  const [user] = useState(() => {
+
+    if (typeof window === "undefined") {
+      return null;
+    }
+
     const userData = localStorage.getItem("user");
 
-    if (!token) {
-      router.push("/login");
-      return;
-    }
+    return userData
+      ? JSON.parse(userData)
+      : null;
 
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, [router]);
+  });
+
+
+
+  if (
+    typeof window !== "undefined" &&
+    !localStorage.getItem("token")
+  ) {
+    router.replace("/login");
+    return null;
+  }
+
+
 
   function handleLogout() {
+
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 
-    router.push("/login");
+    router.replace("/login");
+
   }
 
+
+
   return (
-    <div className="min-h-screen bg-slate-950">
-      {/* Header */}
+
+    <div className="
+      min-h-screen
+      bg-white
+    ">
+
+
       <DashboardHeader
         user={user}
         onLogout={handleLogout}
       />
 
-      <main className="space-y-10 p-8">
 
-        {/* Dashboard Statistics */}
-        <DashboardStats />
 
-        {/* Candidate Table + Pipeline */}
-        <div className="grid gap-8 xl:grid-cols-4">
+      <main
+        className="
+          space-y-16
+          px-10
+          py-12
+          lg:px-14
+        "
+      >
 
-          <div className="xl:col-span-3">
+
+        {/* Statistics */}
+
+        <section>
+
+          <DashboardStats />
+
+        </section>
+
+
+
+
+        {/* Candidate + Pipeline */}
+
+        <section
+          className="
+            grid
+            gap-10
+            xl:grid-cols-4
+          "
+        >
+
+
+          <div
+            className="
+              xl:col-span-3
+            "
+          >
+
             <CandidateTable />
+
           </div>
+
+
 
           <HiringPipeline />
 
-        </div>
+
+        </section>
+
+
+
+
 
         {/* AI Insights */}
-        <AIInsights />
+
+        <section
+          className="
+            pt-4
+          "
+        >
+
+          <AIInsights />
+
+        </section>
+
+
 
       </main>
+
+
     </div>
+
   );
+
 }

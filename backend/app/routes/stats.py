@@ -1,28 +1,48 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.candidate import Candidate
+from app.models.job import Job
+
+from fastapi import Depends
+
+from app.dependencies import get_current_user
+
+router = APIRouter(
+    dependencies=[
+        Depends(get_current_user)
+    ]
+)
 
 
-router = APIRouter()
-
-
+@router.get("")
 @router.get("/")
 def dashboard_stats(
     db: Session = Depends(get_db),
 ):
-
+    # Candidates
     total_candidates = (
         db.query(Candidate)
         .count()
     )
 
+    # Jobs
+    active_jobs = (
+        db.query(Job)
+        .filter(
+            Job.status == "Open"
+        )
+        .count()
+    )
 
-    active_jobs = 0
+    total_jobs = (
+        db.query(Job)
+        .count()
+    )
 
-
+    # Interview pipeline
     interviews = (
         db.query(Candidate)
         .filter(
@@ -30,7 +50,6 @@ def dashboard_stats(
         )
         .count()
     )
-
 
     applied = (
         db.query(Candidate)
@@ -40,7 +59,6 @@ def dashboard_stats(
         .count()
     )
 
-
     screening = (
         db.query(Candidate)
         .filter(
@@ -48,7 +66,6 @@ def dashboard_stats(
         )
         .count()
     )
-
 
     selected = (
         db.query(Candidate)
@@ -58,7 +75,6 @@ def dashboard_stats(
         .count()
     )
 
-
     rejected = (
         db.query(Candidate)
         .filter(
@@ -67,51 +83,36 @@ def dashboard_stats(
         .count()
     )
 
+    on_hold = (
+        db.query(Candidate)
+        .filter(
+            Candidate.interview_result == "On Hold"
+        )
+        .count()
+    )
 
+    # ATS
     average_ats = (
         db.query(
-            func.avg(
-                Candidate.ats_score
-            )
+            func.avg(Candidate.ats_score)
         )
         .scalar()
     )
 
-
     return {
-
-        "totalCandidates":
-            total_candidates,
-
-        "activeJobs":
-            active_jobs,
-
-        "interviews":
-            interviews,
-
-        "averageATS":
-            round(
-                average_ats or 0
-            ),
-
-
+        "totalCandidates": total_candidates,
+        "activeJobs": active_jobs,
+        "totalJobs": total_jobs,
+        "interviews": interviews,
+        "averageATS": round(
+            average_ats or 0
+        ),
         "pipeline": {
-
-            "Applied":
-                applied,
-
-            "Screening":
-                screening,
-
-            "Interview":
-                interviews,
-
-            "Selected":
-                selected,
-
-            "Rejected":
-                rejected,
-
-        }
-
+            "Applied": applied,
+            "Screening": screening,
+            "Interview": interviews,
+            "Selected": selected,
+            "Rejected": rejected,
+            "On Hold": on_hold,
+        },
     }

@@ -1,30 +1,73 @@
 "use client";
 
-export default function ProfileSkills({ candidate }) {
-  if (!candidate) return null;
+
+export default function ProfileSkills({
+  candidate
+}){
+
+  if(!candidate) return null;
+
+
+  const skills =
+    Array.isArray(candidate.skills)
+    ? candidate.skills
+    : JSON.parse(candidate.skills || "[]");
+
 
   return (
-    <div className="mt-8">
-      <h3 className="mb-4 text-lg font-semibold text-white">
+
+    <section className="
+    mt-3
+    rounded-xl
+    border
+    border-slate-800
+    bg-slate-900
+    p-3
+    ">
+
+
+      <h3 className="
+      mb-2
+      font-semibold
+      text-white
+      ">
         Skills
       </h3>
 
-      <div className="flex flex-wrap gap-3">
-        {candidate.skills?.length ? (
-          candidate.skills.map((skill) => (
+
+      <div className="
+      flex
+      flex-wrap
+      gap-2
+      ">
+
+
+        {
+          skills.map(skill=>(
+
             <span
               key={skill}
-              className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-300 transition hover:border-indigo-400"
+              className="
+              rounded-full
+              bg-indigo-500/10
+              px-3
+              py-1
+              text-xs
+              text-indigo-300
+              "
             >
               {skill}
             </span>
+
           ))
-        ) : (
-          <p className="text-slate-400">
-            No skills available.
-          </p>
-        )}
+        }
+
+
       </div>
-    </div>
+
+
+    </section>
+
   );
+
 }

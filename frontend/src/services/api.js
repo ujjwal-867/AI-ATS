@@ -163,4 +163,27 @@ export async function getCandidateById(id){
   );
 }
 
+
 export default request;
+
+export async function createJob(data){
+
+
+const response = await request(
+"/api/jobs/",
+{
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify(data)
+
+}
+);
+
+
+return response;
+
+}

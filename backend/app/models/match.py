@@ -6,7 +6,9 @@ from app.database import Base
 
 
 class Match(Base):
+
     __tablename__ = "matches"
+
 
     id = Column(
         String,
@@ -14,11 +16,13 @@ class Match(Base):
         default=lambda: str(uuid.uuid4()),
     )
 
+
     candidate_id = Column(
         String,
         ForeignKey("candidates.id"),
         nullable=False,
     )
+
 
     job_id = Column(
         String,
@@ -26,22 +30,32 @@ class Match(Base):
         nullable=False,
     )
 
-    ats_score = Column(
+
+    match_score = Column(
         Integer,
         default=0,
     )
+
 
     matched_skills = Column(
         Text,
     )
 
+
     missing_skills = Column(
         Text,
     )
 
+
     extra_skills = Column(
         Text,
     )
+
+
+    recommendation = Column(
+        String,
+    )
+
 
     created_at = Column(
         DateTime(timezone=True),

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+
 import {
   FileText,
   Search,
@@ -18,42 +19,49 @@ const stages = [
   {
     title: "Applied",
     icon: FileText,
-    color: "#3B82F6",
+    color: "text-blue-600",
+    bg: "bg-blue-50",
   },
   {
     title: "Screening",
     icon: Search,
-    color: "#06B6D4",
+    color: "text-cyan-600",
+    bg: "bg-cyan-50",
   },
   {
     title: "Interview",
     icon: Users,
-    color: "#D4AF37",
+    color: "text-indigo-600",
+    bg: "bg-indigo-50",
   },
   {
     title: "Selected",
     icon: BadgeCheck,
-    color: "#22C55E",
+    color: "text-green-600",
+    bg: "bg-green-50",
   },
   {
     title: "Rejected",
     icon: Trophy,
-    color: "#EF4444",
+    color: "text-red-600",
+    bg: "bg-red-50",
   },
 ];
 
 
-export default function HiringPipeline(){
 
-  const [pipeline,setPipeline] = useState({});
-  const [loading,setLoading] = useState(true);
+export default function HiringPipeline() {
+
+  const [pipeline, setPipeline] = useState({});
+  const [loading, setLoading] = useState(true);
 
 
-  useEffect(()=>{
 
-    async function load(){
+  useEffect(() => {
 
-      try{
+    async function loadPipeline() {
+
+      try {
 
         const data = await getStats();
 
@@ -61,16 +69,14 @@ export default function HiringPipeline(){
           data.pipeline || {}
         );
 
-      }
-      catch(error){
+      } catch (error) {
 
         console.log(
           "Pipeline error",
           error
         );
 
-      }
-      finally{
+      } finally {
 
         setLoading(false);
 
@@ -79,26 +85,27 @@ export default function HiringPipeline(){
     }
 
 
-    load();
+    loadPipeline();
 
-  },[]);
+  }, []);
 
 
 
-  if(loading){
+
+  if (loading) {
 
     return (
 
       <div className="
-      flex
-      justify-center
-      p-4
+        flex
+        justify-center
+        py-10
       ">
 
         <Loader2
           className="
-          animate-spin
-          text-[#D4AF37]
+            animate-spin
+            text-blue-600
           "
         />
 
@@ -113,130 +120,164 @@ export default function HiringPipeline(){
   return (
 
     <section className="
-    rounded-2xl
-    border
-    border-slate-200
-    bg-white
-    p-4
-    shadow-sm
+      rounded-3xl
+      border
+      border-slate-200
+      bg-white
+      p-8
+      shadow-sm
     ">
-
-      <h2 className="
-      text-2xl
-      font-bold
-      text-[#111827]
-      ">
-        Hiring Pipeline
-      </h2>
-
-
-      <p className="
-      mt-1
-      text-slate-500
-      ">
-        Track candidate progress.
-      </p>
 
 
 
       <div className="
-      mt-4
-      grid
-      gap-3
-      lg:grid-cols-5
+        mb-8
+      ">
+
+        <h2 className="
+          text-3xl
+          font-bold
+          tracking-tight
+          text-slate-900
+        ">
+          Hiring Pipeline
+        </h2>
+
+
+        <p className="
+          mt-2
+          text-slate-500
+        ">
+          Track candidate movement through recruitment stages.
+        </p>
+
+      </div>
+
+
+
+
+
+      <div className="
+        grid
+        gap-5
+        lg:grid-cols-5
       ">
 
 
-        {
-          stages.map(
-            (stage,index)=>{
-
-              const Icon = stage.icon;
+        {stages.map((stage,index)=>{
 
 
-              return (
+          const Icon = stage.icon;
 
-                <motion.div
 
-                  key={stage.title}
+          return (
 
-                  initial={{
-                    opacity:0,
-                    y:10,
-                  }}
+            <motion.div
 
-                  animate={{
-                    opacity:1,
-                    y:0,
-                  }}
+              key={stage.title}
 
-                  transition={{
-                    delay:index*0.08,
-                  }}
 
-                  className="
-                  rounded-xl
-                  border
-                  bg-slate-50
-                  p-3
-                  "
+              initial={{
+                opacity:0,
+                y:15,
+              }}
 
-                >
 
-                  <div
-                    className="
-                    flex
-                    h-9
-                    w-9
-                    items-center
-                    justify-center
-                    rounded-xl
-                    "
-                    style={{
-                      backgroundColor:
-                      `${stage.color}20`
-                    }}
-                  >
+              animate={{
+                opacity:1,
+                y:0,
+              }}
 
-                    <Icon
-                      size={18}
-                      style={{
-                        color:stage.color
-                      }}
-                    />
 
-                  </div>
+              transition={{
+                delay:index * 0.08,
+              }}
+
+
+              whileHover={{
+                y:-5,
+              }}
 
 
 
-                  <h3 className="
-                  mt-2
+              className="
+                min-h-[140px]
+                rounded-3xl
+                border
+                border-slate-200
+                bg-white
+                p-6
+                transition
+                hover:shadow-lg
+              "
+
+            >
+
+
+
+              <div className={`
+                flex
+                h-12
+                w-12
+                items-center
+                justify-center
+                rounded-2xl
+                ${stage.bg}
+              `}>
+
+                <Icon
+                  className={`
+                    h-6
+                    w-6
+                    ${stage.color}
+                  `}
+                />
+
+              </div>
+
+
+
+
+
+              <h3 className="
+                mt-5
+                text-lg
+                font-bold
+                text-slate-900
+              ">
+                {stage.title}
+              </h3>
+
+
+
+
+
+              <p className="
+                mt-2
+                text-sm
+                text-slate-500
+              ">
+
+                <span className="
+                  text-2xl
                   font-bold
-                  ">
-                    {stage.title}
-                  </h3>
+                  text-slate-900
+                ">
+                  {pipeline[stage.title] || 0}
+                </span>
+
+                {" "}Candidates
+
+              </p>
 
 
 
-                  <p className="
-                  text-sm
-                  text-slate-500
-                  ">
-                    {
-                      pipeline[stage.title] || 0
-                    }
-                    {" "}
-                    Candidates
-                  </p>
+            </motion.div>
+
+          );
 
 
-                </motion.div>
-
-              );
-
-            }
-          )
-        }
+        })}
 
 
       </div>

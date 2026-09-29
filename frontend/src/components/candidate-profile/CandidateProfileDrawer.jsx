@@ -1,65 +1,181 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, Download, CalendarPlus } from "lucide-react";
 
 import ProfileHeader from "./ProfileHeader";
 import ProfileSkills from "./ProfileSkills";
 import ProfileTimeline from "./ProfileTimeline";
+
 
 export default function CandidateProfileDrawer({
   open,
   candidate,
   onClose,
 }) {
+
+  if (!candidate) return null;
+
+
   return (
     <>
-      {/* Overlay */}
+
       <div
         onClick={onClose}
-        className={`fixed inset-0 z-40 bg-black/60 transition-opacity duration-300 ${
-          open
-            ? "opacity-100 visible"
-            : "opacity-0 invisible"
-        }`}
+        className={`
+          fixed inset-0 z-40
+          bg-black/50
+          transition
+          ${
+            open
+            ? "visible opacity-100"
+            : "invisible opacity-0"
+          }
+        `}
       />
 
-      {/* Drawer */}
+
       <aside
-        className={`fixed right-0 top-0 z-50 h-screen w-full max-w-xl overflow-y-auto border-l border-slate-800 bg-slate-950 shadow-2xl transition-transform duration-300 ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`
+          fixed
+          right-0
+          top-0
+          z-50
+          h-screen
+          w-full
+          max-w-lg
+          overflow-y-auto
+          bg-slate-950
+          p-4
+          transition-transform
+          duration-300
+          ${
+            open
+            ? "translate-x-0"
+            : "translate-x-full"
+          }
+        `}
       >
-        <div className="flex items-center justify-between border-b border-slate-800 p-6">
-          <h2 className="text-2xl font-bold text-white">
+
+
+        <div
+          className="
+          mb-3
+          flex
+          items-center
+          justify-between
+          border-b
+          border-slate-800
+          pb-2
+          "
+        >
+
+          <h2 className="
+          text-lg
+          font-bold
+          text-white
+          ">
             Candidate Profile
           </h2>
 
+
           <button
             onClick={onClose}
-            className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            className="
+            rounded-lg
+            p-1
+            text-slate-400
+            hover:bg-slate-800
+            "
           >
-            <X size={24} />
+            <X size={20}/>
           </button>
+
         </div>
 
-        <div className="p-6">
-          <ProfileHeader candidate={candidate} />
 
-          <ProfileSkills candidate={candidate} />
 
-          <ProfileTimeline candidate={candidate} />
+        <ProfileHeader candidate={candidate}/>
 
-          <div className="mt-8 flex gap-4">
-            <button className="flex-1 rounded-xl bg-indigo-600 py-3 font-semibold text-white hover:bg-indigo-700">
-              Download Resume
-            </button>
 
-            <button className="flex-1 rounded-xl border border-slate-700 py-3 font-semibold text-white hover:border-indigo-500">
-              Schedule Interview
-            </button>
-          </div>
+        <ProfileSkills candidate={candidate}/>
+
+
+        <ProfileTimeline candidate={candidate}/>
+
+
+
+        <div
+          className="
+          sticky
+          bottom-0
+          mt-4
+          flex
+          gap-2
+          bg-slate-950
+          py-2
+          "
+        >
+
+          <a
+            href={
+              candidate.resume_url
+              ? `http://127.0.0.1:8000/${candidate.resume_url}`
+              : "#"
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+            className="
+            flex
+            flex-1
+            items-center
+            justify-center
+            gap-2
+            rounded-lg
+            bg-indigo-600
+            py-2
+            text-sm
+            font-medium
+            text-white
+            hover:bg-indigo-700
+            "
+          >
+
+            <Download size={15}/>
+            Resume
+
+          </a>
+
+
+
+          <button
+            className="
+            flex
+            flex-1
+            items-center
+            justify-center
+            gap-2
+            rounded-lg
+            border
+            border-slate-700
+            py-2
+            text-sm
+            font-medium
+            text-white
+            hover:border-indigo-500
+            "
+          >
+
+            <CalendarPlus size={15}/>
+            Interview
+
+          </button>
+
+
         </div>
+
+
       </aside>
+
     </>
   );
 }

@@ -1,11 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
+from app.dependencies import get_current_user
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.database import get_db
 from app.models.candidate import Candidate
 
-router = APIRouter()
+router = APIRouter(
+    dependencies=[
+        Depends(get_current_user)
+    ]
+)
 
 
 class UpdateStatusRequest(BaseModel):

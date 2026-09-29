@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+
 import {
   Brain,
-  Award,
+  Users,
+  Clock,
   Sparkles,
-  TrendingUp,
   ArrowUpRight,
   Loader2,
 } from "lucide-react";
@@ -14,32 +15,31 @@ import {
 import { getStats } from "@/services/api";
 
 
-export default function AIInsights(){
+export default function AIInsights() {
 
-  const [stats,setStats] = useState(null);
-  const [loading,setLoading] = useState(true);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
 
 
-  useEffect(()=>{
 
-    async function load(){
+  useEffect(() => {
 
-      try{
+    async function load() {
+
+      try {
 
         const data = await getStats();
 
         setStats(data);
 
-      }
-      catch(error){
+      } catch (error) {
 
         console.log(
           "AI insights error",
           error
         );
 
-      }
-      finally{
+      } finally {
 
         setLoading(false);
 
@@ -50,24 +50,25 @@ export default function AIInsights(){
 
     load();
 
-  },[]);
+  }, []);
 
 
 
-  if(loading){
+
+  if (loading) {
 
     return (
 
       <div className="
-      flex
-      justify-center
-      p-4
+        flex
+        justify-center
+        py-10
       ">
 
         <Loader2
           className="
-          animate-spin
-          text-[#D4AF37]
+            animate-spin
+            text-blue-600
           "
         />
 
@@ -79,97 +80,111 @@ export default function AIInsights(){
 
 
 
-  if(!stats)
+
+  if (!stats) {
     return null;
+  }
+
 
 
 
   const insights = [
+
     {
-      title:"Average ATS Score",
-      value:`${stats.averageATS}%`,
-      subtitle:"Across all applicants",
-      icon:Brain,
-      color:"bg-blue-50",
-      iconColor:"text-blue-600",
+      title: "Average ATS Score",
+      value: `${stats.averageATS ?? 0}%`,
+      subtitle: "Overall candidate quality",
+      icon: Brain,
+      bg: "bg-blue-50",
+      color: "text-blue-600",
     },
+
+
     {
-      title:"Total Candidates",
-      value:stats.totalCandidates,
-      subtitle:"Registered applicants",
-      icon:Award,
-      color:"bg-[#FFF8E1]",
-      iconColor:"text-[#D4AF37]",
+      title: "Total Candidates",
+      value: stats.totalCandidates ?? 0,
+      subtitle: "Registered applicants",
+      icon: Users,
+      bg: "bg-indigo-50",
+      color: "text-indigo-600",
     },
+
+
     {
-      title:"Pending Applications",
-      value:stats.pending,
-      subtitle:"Waiting for review",
-      icon:TrendingUp,
-      color:"bg-green-50",
-      iconColor:"text-green-600",
+      title: "Pending Review",
+      value: stats.pending ?? 0,
+      subtitle: "Waiting for screening",
+      icon: Clock,
+      bg: "bg-green-50",
+      color: "text-green-600",
     },
+
+
     {
-      title:"Shortlisted",
-      value:stats.shortlisted,
-      subtitle:"Candidates shortlisted",
-      icon:Sparkles,
-      color:"bg-purple-50",
-      iconColor:"text-purple-600",
+      title: "Shortlisted",
+      value: stats.shortlisted ?? 0,
+      subtitle: "Ready for next stage",
+      icon: Sparkles,
+      bg: "bg-purple-50",
+      color: "text-purple-600",
     },
+
   ];
+
 
 
 
   return (
 
     <section className="
-    rounded-2xl
-    border
-    border-slate-200
-    bg-white
-    p-5
-    shadow-sm
-    h-full
+      rounded-3xl
+      border
+      border-slate-200
+      bg-white
+      p-8
+      shadow-sm
     ">
 
 
+
       <div className="
-      mb-5
-      flex
-      items-center
-      justify-between
+        mb-8
+        flex
+        items-center
+        justify-between
       ">
+
 
         <div>
 
           <h2 className="
-          text-2xl
-          font-bold
-          text-[#111827]
+            text-3xl
+            font-bold
+            text-slate-900
           ">
             AI Insights
           </h2>
 
+
           <p className="
-          mt-1
-          text-sm
-          text-slate-500
+            mt-2
+            text-slate-500
           ">
-            Intelligent recruitment insights
+            Intelligent recruitment analysis
           </p>
 
         </div>
 
 
+
         <span className="
-        rounded-full
-        bg-[#FFF8E1]
-        px-3
-        py-1
-        text-xs
-        font-semibold
-        text-[#B8860B]
+          rounded-full
+          bg-blue-50
+          px-4
+          py-2
+          text-sm
+          font-semibold
+          text-blue-600
         ">
           AI Live
         </span>
@@ -179,128 +194,155 @@ export default function AIInsights(){
 
 
 
-      <div className="space-y-3">
 
 
-        {
-          insights.map(
-            (item,index)=>{
+      <div className="
+        grid
+        gap-6
+        md:grid-cols-2
+      ">
 
-              const Icon=item.icon;
+
+        {insights.map((item,index)=>{
 
 
-              return (
+          const Icon = item.icon;
 
-                <motion.div
 
-                  key={item.title}
+          return (
 
-                  initial={{
-                    opacity:0,
-                    y:10,
-                  }}
+            <motion.div
 
-                  animate={{
-                    opacity:1,
-                    y:0,
-                  }}
+              key={item.title}
 
-                  transition={{
-                    delay:index*0.08,
-                  }}
 
-                  className="
-                  rounded-xl
-                  border
-                  border-slate-200
-                  bg-slate-50
-                  p-3
-                  "
+              initial={{
+                opacity:0,
+                y:15,
+              }}
 
-                >
 
-                  <div className="
+              animate={{
+                opacity:1,
+                y:0,
+              }}
+
+
+              transition={{
+                delay:index * 0.08,
+              }}
+
+
+              whileHover={{
+                y:-4,
+              }}
+
+
+              className="
+                min-h-[120px]
+                rounded-3xl
+                border
+                border-slate-200
+                bg-slate-50
+                p-6
+                transition
+                hover:bg-white
+                hover:shadow-lg
+              "
+
+            >
+
+
+
+              <div className="
+                flex
+                items-center
+                justify-between
+              ">
+
+
+
+                <div className="
                   flex
                   items-center
-                  justify-between
-                  ">
+                  gap-5
+                ">
 
 
-                    <div className="
+
+                  <div className={`
                     flex
+                    h-12
+                    w-12
                     items-center
-                    gap-3
-                    ">
+                    justify-center
+                    rounded-2xl
+                    ${item.bg}
+                  `}>
 
-
-                      <div className={`
-                      flex
-                      h-10
-                      w-10
-                      items-center
-                      justify-center
-                      rounded-xl
-                      ${item.color}
-                      `}>
-
-                        <Icon
-                          className={`
-                          h-5
-                          w-5
-                          ${item.iconColor}
-                          `}
-                        />
-
-                      </div>
-
-
-                      <div>
-
-                        <p className="
-                        text-xs
-                        text-slate-500
-                        ">
-                          {item.title}
-                        </p>
-
-                        <h3 className="
-                        font-bold
-                        text-[#111827]
-                        ">
-                          {item.value}
-                        </h3>
-
-                        <p className="
-                        text-xs
-                        text-slate-500
-                        ">
-                          {item.subtitle}
-                        </p>
-
-                      </div>
-
-
-                    </div>
-
-
-                    <ArrowUpRight
-                      size={18}
-                      className="
-                      text-green-600
-                      "
+                    <Icon
+                      className={`
+                        h-6
+                        w-6
+                        ${item.color}
+                      `}
                     />
+
+                  </div>
+
+
+
+
+                  <div>
+
+                    <p className="
+                      text-sm
+                      text-slate-500
+                    ">
+                      {item.title}
+                    </p>
+
+
+                    <h3 className="
+                      mt-1
+                      text-3xl
+                      font-bold
+                      text-slate-900
+                    ">
+                      {item.value}
+                    </h3>
+
+
+                    <p className="
+                      text-sm
+                      text-slate-500
+                    ">
+                      {item.subtitle}
+                    </p>
 
 
                   </div>
 
 
-                </motion.div>
+                </div>
 
-              );
 
-            }
-          )
-        }
+
+
+                <ArrowUpRight
+                  size={18}
+                  className="text-green-600"
+                />
+
+
+              </div>
+
+
+            </motion.div>
+
+          );
+
+        })}
 
 
       </div>

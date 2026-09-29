@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
-
+import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
 import {
@@ -18,841 +13,813 @@ import {
   User,
   Mail,
   Phone,
-  BadgeCheck,
-  Briefcase,
+  BriefcaseBusiness,
   Target,
+  Sparkles,
 } from "lucide-react";
 
-
-import request, {
+import {
   getJobs,
   matchCandidate,
 } from "@/services/api";
 
+import request from "@/services/api";
 
 export default function UploadZone() {
+  const [file, setFile] = useState(null);
+  const [jobs, setJobs] = useState([]);
+  const [selectedJob, setSelectedJob] = useState("");
 
+  const [candidate, setCandidate] = useState(null);
+  const [matchResult, setMatchResult] = useState(null);
 
-  const [file,setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [matching, setMatching] = useState(false);
 
-  const [jobs,setJobs] = useState([]);
+  const [loadingJobs, setLoadingJobs] = useState(true);
 
-  const [selectedJob,setSelectedJob] = useState("");
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
 
-  const [candidate,setCandidate] = useState(null);
+  // --------------------------------------------------
+  // LOAD JOBS
+  // --------------------------------------------------
 
-  const [matchResult,setMatchResult] = useState(null);
+  useEffect(() => {
+    let mounted = true;
 
-
-  const [uploading,setUploading] = useState(false);
-
-  const [matching,setMatching] = useState(false);
-
-
-  const [successMessage,setSuccessMessage] = useState("");
-
-  const [errorMessage,setErrorMessage] = useState("");
-
-
-
-  useEffect(()=>{
-
-    async function loadJobs(){
-
-      try{
+    async function loadJobs() {
+      try {
+        setLoadingJobs(true);
 
         const data = await getJobs();
 
-        setJobs(data);
+        if (!mounted) return;
 
-      }catch(error){
+        const jobList = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.jobs)
+            ? data.jobs
+            : [];
 
-        console.log(error);
+        setJobs(jobList);
 
+        if (jobList.length > 0) {
+          setSelectedJob(String(jobList[0].id));
+        }
+      } catch (err) {
+        console.error("Jobs loading error:", err);
+
+        if (mounted) {
+          setError(
+            err?.message ||
+              "Unable to load jobs."
+          );
+        }
+      } finally {
+        if (mounted) {
+          setLoadingJobs(false);
+        }
       }
-
     }
-
 
     loadJobs();
 
-  },[]);
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
+  // --------------------------------------------------
+  // FILE DROP
+  // --------------------------------------------------
 
-
-
-  const onDrop = useCallback((files)=>{
-
-    if(!files.length)
+  const onDrop = useCallback((acceptedFiles) => {
+    if (!acceptedFiles?.length) {
+      setError(
+        "Please select a valid PDF, DOC, or DOCX resume."
+      );
       return;
+    }
 
+    const selectedFile = acceptedFiles[0];
 
-    setFile(files[0]);
-
+    setFile(selectedFile);
     setCandidate(null);
-
     setMatchResult(null);
 
-    setSuccessMessage("");
-
-    setErrorMessage("");
-
-  },[]);
-
-
-
-
-  const handleUpload = async()=>{
-
-
-    if(!file){
-
-      setErrorMessage(
-        "Please choose resume first"
-      );
-
-      return;
-
-    }
-
-
-    try{
-
-
-      setUploading(true);
-
-      setErrorMessage("");
-
-
-
-      const formData = new FormData();
-
-      formData.append(
-        "file",
-        file
-      );
-
-
-
-      const response =
-        await request(
-          "/api/upload/",
-          {
-            method:"POST",
-            body:formData,
-          }
-        );
-
-
-
-      setCandidate(
-        response.candidate
-      );
-
-
-      setSuccessMessage(
-        response.message
-      );
-
-
-      setFile(null);
-
-
-
-    }catch(error){
-
-      setErrorMessage(
-        error.message
-      );
-
-
-    }finally{
-
-      setUploading(false);
-
-    }
-
-  };
-
-
-
-
-  const handleMatch = async()=>{
-
-
-    if(!candidate?.id){
-
-      setErrorMessage(
-        "Upload resume first"
-      );
-
-      return;
-
-    }
-
-
-    if(!selectedJob){
-
-      setErrorMessage(
-        "Select job first"
-      );
-
-      return;
-
-    }
-
-
-
-    try{
-
-
-      setMatching(true);
-
-
-      const result =
-        await matchCandidate(
-          candidate.id,
-          selectedJob
-        );
-
-
-
-      setMatchResult(
-        result
-      );
-
-
-
-      setCandidate(prev=>({
-
-        ...prev,
-
-        ats_score:
-          result.ats_score,
-
-      }));
-
-
-
-    }catch(error){
-
-      setErrorMessage(
-        error.message
-      );
-
-
-    }finally{
-
-      setMatching(false);
-
-    }
-
-
-  };
-
-
-
-  const removeFile=()=>{
-
-    setFile(null);
-
-    setCandidate(null);
-
-    setMatchResult(null);
-
-  };
-
-
+    setError("");
+    setSuccess("");
+  }, []);
 
   const {
     getRootProps,
     getInputProps,
     isDragActive,
-
-  }=useDropzone({
-
-    multiple:false,
-
+    open,
+  } = useDropzone({
     onDrop,
-
-    accept:{
-
-      "application/pdf":[
-        ".pdf"
-      ],
-
-      "application/msword":[
-        ".doc"
-      ],
-
+    multiple: false,
+    noClick: true,
+    accept: {
+      "application/pdf": [".pdf"],
+      "application/msword": [".doc"],
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-      [
-        ".docx"
-      ],
-
+        [".docx"],
     },
-
   });
-    return (
 
+  // --------------------------------------------------
+  // REMOVE FILE
+  // --------------------------------------------------
+
+  function removeFile(event) {
+    event.stopPropagation();
+
+    setFile(null);
+    setCandidate(null);
+    setMatchResult(null);
+    setSuccess("");
+    setError("");
+  }
+
+  // --------------------------------------------------
+  // UPLOAD RESUME
+  // --------------------------------------------------
+
+  async function uploadResume() {
+    if (!file) {
+      setError("Please select a resume first.");
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setError("");
+      setSuccess("");
+      setMatchResult(null);
+
+      const formData = new FormData();
+
+      formData.append("file", file);
+
+      const data = await request(
+        "/api/upload/",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const uploadedCandidate =
+        data?.candidate || data;
+
+      if (!uploadedCandidate) {
+        throw new Error(
+          "Resume uploaded, but candidate information was not returned."
+        );
+      }
+
+      setCandidate(uploadedCandidate);
+
+      setSuccess(
+        data?.message ||
+          "Resume uploaded and candidate created successfully."
+      );
+
+      setFile(null);
+    } catch (err) {
+      console.error("Resume upload error:", err);
+
+      setError(
+        err?.message ||
+          "Unable to upload resume. Please try again."
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  // --------------------------------------------------
+  // AI MATCHING
+  // --------------------------------------------------
+
+  async function analyzeMatch() {
+    if (!candidate?.id) {
+      setError("Please upload a resume first.");
+      return;
+    }
+
+    if (!selectedJob) {
+      setError("Please select a job first.");
+      return;
+    }
+
+    try {
+      setMatching(true);
+      setError("");
+      setSuccess("");
+
+      const result = await matchCandidate(
+        candidate.id,
+        selectedJob
+      );
+
+      setMatchResult(result);
+
+      setCandidate((previous) => ({
+        ...previous,
+        ats_score:
+          result?.match_score ??
+          previous?.ats_score ??
+          0,
+      }));
+
+      setSuccess(
+        "AI matching completed successfully."
+      );
+    } catch (err) {
+      console.error("AI matching error:", err);
+
+      setError(
+        err?.message ||
+          "Unable to analyze candidate match."
+      );
+    } finally {
+      setMatching(false);
+    }
+  }
+
+  // --------------------------------------------------
+  // RENDER
+  // --------------------------------------------------
+
+  return (
     <div className="space-y-8">
 
-
-      {/* Upload Area */}
+      {/* -------------------------------------------- */}
+      {/* UPLOAD AREA */}
+      {/* -------------------------------------------- */}
 
       <div
         {...getRootProps()}
-        className={`cursor-pointer rounded-3xl border-2 border-dashed p-16 text-center transition-all duration-300 ${
-          isDragActive
-            ? "border-green-500 bg-green-50"
-            : "border-[#D4AF37] bg-[#FFFDF5] hover:bg-[#FFF8E1]"
-        }`}
+        className={`
+          rounded-3xl
+          border-2
+          border-dashed
+          p-8
+          text-center
+          transition-all
+          sm:p-12
+          lg:p-16
+          ${
+            isDragActive
+              ? "border-blue-500 bg-blue-50"
+              : "border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50/40"
+          }
+        `}
       >
-
         <input {...getInputProps()} />
 
-
-        <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[#D4AF37]/10">
-
-          <UploadCloud
-            size={46}
-            className="text-[#D4AF37]"
-          />
-
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+          {isDragActive ? (
+            <UploadCloud size={30} />
+          ) : (
+            <UploadCloud size={30} />
+          )}
         </div>
 
-
-        <h2 className="mt-6 text-3xl font-bold text-[#111827]">
-
-          Drag & Drop Resume
-
+        <h2 className="mt-5 text-2xl font-bold text-slate-900">
+          {isDragActive
+            ? "Drop your resume here"
+            : "Upload a Resume"}
         </h2>
 
-
-        <p className="mt-3 text-lg text-slate-500">
-
-          Upload PDF, DOC or DOCX resumes
-
+        <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
+          Drag and drop a candidate resume here, or select a
+          file from your computer. Supported formats are PDF,
+          DOC, and DOCX.
         </p>
-
 
         <button
           type="button"
-          className="mt-8 rounded-2xl bg-[#D4AF37] px-8 py-4 font-semibold text-black hover:bg-[#E7C75F]"
+          onClick={open}
+          className="
+            mt-6
+            inline-flex
+            items-center
+            gap-2
+            rounded-xl
+            bg-blue-600
+            px-6
+            py-3
+            text-sm
+            font-semibold
+            text-white
+            shadow-sm
+            transition
+            hover:bg-blue-700
+          "
         >
-
+          <UploadCloud size={18} />
           Choose Resume
-
         </button>
 
+        {/* SELECTED FILE */}
 
-      </div>
-
-
-
-
-      {/* Selected Resume */}
-
-
-      {file && (
-
-        <div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
-
-
-          <div className="border-b px-8 py-6">
-
-            <h3 className="text-xl font-bold">
-
-              Selected Resume
-
-            </h3>
-
-          </div>
-
-
-
-          <div className="flex items-center justify-between px-8 py-6">
-
-
-            <div className="flex items-center gap-5">
-
-
-              <div className="rounded-2xl bg-[#FFF8E1] p-4">
-
-                <FileText
-                  className="text-[#D4AF37]"
-                  size={28}
-                />
-
+        {file && (
+          <div
+            className="
+              mx-auto
+              mt-7
+              flex
+              max-w-2xl
+              items-center
+              justify-between
+              gap-4
+              rounded-2xl
+              border
+              border-slate-200
+              bg-white
+              p-4
+              text-left
+              shadow-sm
+            "
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <FileText size={21} />
               </div>
 
-
-              <div>
-
-                <h4 className="font-semibold">
-
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-900">
                   {file.name}
-
-                </h4>
-
-
-                <p className="text-sm text-slate-500">
-
-                  {(file.size/1024/1024).toFixed(2)} MB
-
                 </p>
 
-
+                <p className="mt-1 text-xs text-slate-500">
+                  {(file.size / 1024 / 1024).toFixed(2)} MB
+                </p>
               </div>
-
-
             </div>
-
-
 
             <button
+              type="button"
               onClick={removeFile}
-              className="text-red-500"
+              className="
+                shrink-0
+                rounded-lg
+                p-2
+                text-slate-400
+                transition
+                hover:bg-red-50
+                hover:text-red-600
+              "
+              aria-label="Remove selected file"
             >
-
-              <Trash2/>
-
+              <Trash2 size={18} />
             </button>
-
-
-
           </div>
+        )}
+      </div>
 
-
-        </div>
-
-      )}
-
-
-
-
-
-
-      {/* Upload Button */}
-
+      {/* -------------------------------------------- */}
+      {/* UPLOAD BUTTON */}
+      {/* -------------------------------------------- */}
 
       <button
-
-        onClick={handleUpload}
-
+        type="button"
+        onClick={uploadResume}
         disabled={!file || uploading}
-
-        className="w-full rounded-2xl bg-green-600 py-4 text-lg font-semibold text-white hover:bg-green-700 disabled:opacity-50"
-
+        className="
+          flex
+          w-full
+          items-center
+          justify-center
+          gap-2
+          rounded-2xl
+          bg-blue-600
+          px-6
+          py-4
+          text-sm
+          font-bold
+          text-white
+          shadow-sm
+          transition
+          hover:bg-blue-700
+          disabled:cursor-not-allowed
+          disabled:bg-blue-300
+        "
       >
-
         {uploading ? (
-
-          <span className="flex justify-center gap-3">
-
+          <>
             <Loader2
+              size={19}
               className="animate-spin"
             />
-
             Uploading & Analyzing...
-
-          </span>
-
-        ):(
-
-          "Upload & Analyze Resume"
-
+          </>
+        ) : (
+          <>
+            <Sparkles size={19} />
+            Upload & Analyze Resume
+          </>
         )}
-
-
       </button>
 
+      {/* -------------------------------------------- */}
+      {/* SUCCESS */}
+      {/* -------------------------------------------- */}
 
+      {success && (
+        <div className="flex items-start gap-3 rounded-2xl border border-green-200 bg-green-50 p-5 text-sm text-green-700">
+          <CheckCircle2
+            size={20}
+            className="mt-0.5 shrink-0"
+          />
 
-
-
-      {/* Messages */}
-
-
-      {successMessage && (
-
-        <div className="rounded-3xl border border-green-200 bg-green-50 p-6 text-green-700">
-
-          <CheckCircle2 className="inline mr-2"/>
-
-          {successMessage}
-
+          <p>{success}</p>
         </div>
-
       )}
 
+      {/* -------------------------------------------- */}
+      {/* ERROR */}
+      {/* -------------------------------------------- */}
 
+      {error && (
+        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+          <XCircle
+            size={20}
+            className="mt-0.5 shrink-0"
+          />
 
-      {errorMessage && (
-
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700">
-
-          <XCircle className="inline mr-2"/>
-
-          {errorMessage}
-
+          <p>{error}</p>
         </div>
-
       )}
-            {/* Candidate Profile */}
+
+      {/* -------------------------------------------- */}
+      {/* CANDIDATE PROFILE */}
+      {/* -------------------------------------------- */}
 
       {candidate && (
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:p-8">
 
-        <>
+          <div className="flex flex-col justify-between gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-center">
 
-        <div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <User size={20} />
+                </div>
 
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">
+                    Candidate Profile
+                  </h2>
 
-          <div className="border-b px-8 py-6">
+                  <p className="mt-1 text-sm text-slate-500">
+                    Extracted from the uploaded resume
+                  </p>
+                </div>
+              </div>
+            </div>
 
-            <h2 className="text-2xl font-bold text-[#111827]">
-
-              Candidate Profile
-
-            </h2>
-
+            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-green-50 px-4 py-2 text-sm font-semibold text-green-700">
+              <CheckCircle2 size={16} />
+              {candidate.status || "Processed"}
+            </span>
           </div>
 
+          {/* CANDIDATE DETAILS */}
 
+          <div className="mt-7 grid gap-4 md:grid-cols-2">
 
-          <div className="grid gap-8 p-8 md:grid-cols-2">
-
-
-            <div className="flex items-center gap-4">
-
-              <div className="rounded-2xl bg-[#FFF8E1] p-4">
-
+            <div className="rounded-2xl bg-slate-50 p-5">
+              <div className="flex items-center gap-3">
                 <User
-                  className="text-[#D4AF37]"
-                  size={26}
+                  size={19}
+                  className="text-blue-600"
                 />
 
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Name
+                  </p>
+
+                  <p className="mt-1 truncate font-semibold text-slate-900">
+                    {candidate.name || "-"}
+                  </p>
+                </div>
               </div>
-
-
-              <div>
-
-                <p className="text-sm text-slate-500">
-                  Full Name
-                </p>
-
-                <p className="font-semibold">
-                  {candidate.name}
-                </p>
-
-              </div>
-
             </div>
 
-
-
-
-            <div className="flex items-center gap-4">
-
-              <div className="rounded-2xl bg-[#FFF8E1] p-4">
-
+            <div className="rounded-2xl bg-slate-50 p-5">
+              <div className="flex items-center gap-3">
                 <Mail
-                  className="text-[#D4AF37]"
-                  size={26}
+                  size={19}
+                  className="text-blue-600"
                 />
 
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Email
+                  </p>
+
+                  <p className="mt-1 truncate font-semibold text-slate-900">
+                    {candidate.email || "-"}
+                  </p>
+                </div>
               </div>
-
-
-              <div>
-
-                <p className="text-sm text-slate-500">
-                  Email
-                </p>
-
-                <p className="font-semibold">
-                  {candidate.email}
-                </p>
-
-              </div>
-
             </div>
 
-
-
-
-            <div className="flex items-center gap-4">
-
-              <div className="rounded-2xl bg-[#FFF8E1] p-4">
-
+            <div className="rounded-2xl bg-slate-50 p-5">
+              <div className="flex items-center gap-3">
                 <Phone
-                  className="text-[#D4AF37]"
-                  size={26}
+                  size={19}
+                  className="text-blue-600"
                 />
 
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Phone
+                  </p>
+
+                  <p className="mt-1 truncate font-semibold text-slate-900">
+                    {candidate.phone || "-"}
+                  </p>
+                </div>
               </div>
-
-
-              <div>
-
-                <p className="text-sm text-slate-500">
-                  Phone
-                </p>
-
-                <p className="font-semibold">
-                  {candidate.phone || "-"}
-                </p>
-
-              </div>
-
             </div>
 
-
-
-
-            <div className="flex items-center gap-4">
-
-              <div className="rounded-2xl bg-green-100 p-4">
-
-                <BadgeCheck
-                  className="text-green-600"
-                  size={26}
+            <div className="rounded-2xl bg-blue-50 p-5">
+              <div className="flex items-center gap-3">
+                <Target
+                  size={19}
+                  className="text-blue-600"
                 />
 
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    ATS Score
+                  </p>
+
+                  <p className="mt-1 text-3xl font-bold text-blue-600">
+                    {candidate.ats_score || 0}%
+                  </p>
+                </div>
               </div>
-
-
-              <div>
-
-                <p className="text-sm text-slate-500">
-                  Status
-                </p>
-
-                <p className="font-semibold text-green-600">
-                  Applied
-                </p>
-
-              </div>
-
             </div>
 
-
-
           </div>
 
+          {/* JOB MATCHING */}
 
+          <div className="mt-8 border-t border-slate-100 pt-8">
 
-          <div className="px-8 pb-8">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <BriefcaseBusiness size={19} />
+              </div>
 
-            <p className="text-sm text-slate-500">
-              ATS Score
-            </p>
+              <div>
+                <h3 className="font-bold text-slate-900">
+                  Match Candidate to a Job
+                </h3>
 
+                <p className="text-sm text-slate-500">
+                  Compare this candidate against a job description.
+                </p>
+              </div>
+            </div>
 
-            <p className="mt-2 text-5xl font-bold text-green-600">
+            <div className="flex flex-col gap-3 lg:flex-row">
 
-              {candidate.ats_score || 0}%
-
-            </p>
-
-
-          </div>
-
-
-        </div>
-
-
-
-
-
-        {/* Job Matching */}
-
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-
-
-          <div className="flex items-center gap-3">
-
-
-            <Briefcase
-              className="text-[#D4AF37]"
-            />
-
-
-            <h2 className="text-2xl font-bold">
-
-              Select Job For Matching
-
-            </h2>
-
-
-          </div>
-
-
-
-          <select
-
-            value={selectedJob}
-
-            onChange={(e)=>
-              setSelectedJob(
-                e.target.value
-              )
-            }
-
-            className="mt-6 w-full rounded-xl border p-4"
-
-          >
-
-            <option value="">
-
-              Select Job
-
-            </option>
-
-
-
-            {jobs.map((job)=>(
-
-              <option
-                key={job.id}
-                value={job.id}
+              <select
+                value={selectedJob}
+                onChange={(event) => {
+                  setSelectedJob(event.target.value);
+                  setMatchResult(null);
+                  setError("");
+                }}
+                disabled={loadingJobs || matching}
+                className="
+                  h-12
+                  flex-1
+                  rounded-xl
+                  border
+                  border-slate-200
+                  bg-white
+                  px-4
+                  text-sm
+                  font-medium
+                  text-slate-800
+                  outline-none
+                  transition
+                  focus:border-blue-500
+                  focus:ring-2
+                  focus:ring-blue-100
+                  disabled:cursor-not-allowed
+                  disabled:bg-slate-50
+                "
               >
+                {loadingJobs ? (
+                  <option value="">
+                    Loading jobs...
+                  </option>
+                ) : jobs.length === 0 ? (
+                  <option value="">
+                    No jobs available
+                  </option>
+                ) : (
+                  <>
+                    <option value="">
+                      Select a job
+                    </option>
 
-                {job.title} - {job.company}
+                    {jobs.map((job) => (
+                      <option
+                        key={job.id}
+                        value={job.id}
+                      >
+                        {job.title}
+                        {job.company
+                          ? ` — ${job.company}`
+                          : ""}
+                      </option>
+                    ))}
+                  </>
+                )}
+              </select>
 
-              </option>
+              <button
+                type="button"
+                onClick={analyzeMatch}
+                disabled={
+                  !selectedJob ||
+                  matching ||
+                  loadingJobs
+                }
+                className="
+                  inline-flex
+                  h-12
+                  items-center
+                  justify-center
+                  gap-2
+                  rounded-xl
+                  bg-blue-600
+                  px-7
+                  text-sm
+                  font-semibold
+                  text-white
+                  shadow-sm
+                  transition
+                  hover:bg-blue-700
+                  disabled:cursor-not-allowed
+                  disabled:bg-blue-300
+                "
+              >
+                {matching ? (
+                  <>
+                    <Loader2
+                      size={18}
+                      className="animate-spin"
+                    />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={18} />
+                    Analyze Match
+                  </>
+                )}
+              </button>
 
-            ))}
-
-
-
-          </select>
-
-
-
-
-          <button
-
-            onClick={handleMatch}
-
-            disabled={matching}
-
-            className="mt-6 w-full rounded-xl bg-indigo-600 py-4 font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-
-          >
-
-            {matching
-              ? "Analyzing..."
-              : "Analyze ATS Match"
-            }
-
-
-          </button>
-
-
-
+            </div>
+          </div>
         </div>
-
-
-        </>
-
       )}
 
-
-
-
-
-
-      {/* ATS Result */}
-
+      {/* -------------------------------------------- */}
+      {/* MATCH RESULT */}
+      {/* -------------------------------------------- */}
 
       {matchResult && (
-
-
-        <div className="rounded-3xl border border-green-200 bg-green-50 p-8">
-
+        <div className="rounded-3xl border border-blue-100 bg-blue-50 p-6 lg:p-8">
 
           <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white">
+              <Target size={21} />
+            </div>
 
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">
+                ATS Match Result
+              </h2>
 
-            <Target
-              className="text-green-600"
-            />
-
-
-            <h2 className="text-3xl font-bold text-green-700">
-
-              ATS Match Result
-
-            </h2>
-
-
+              <p className="text-sm text-slate-500">
+                AI compatibility analysis for the selected position.
+              </p>
+            </div>
           </div>
 
+          <div className="mt-7 rounded-2xl bg-white p-6 shadow-sm">
 
+            <div className="text-center">
 
+              <p className="text-sm font-medium text-slate-500">
+                Match Score
+              </p>
 
-          <p className="mt-6 text-6xl font-bold text-green-600">
+              <p className="mt-2 text-6xl font-bold text-blue-600">
+                {matchResult.match_score || 0}%
+              </p>
 
-            {matchResult.ats_score}%
+            </div>
 
-          </p>
+            <div className="mt-8 grid gap-6 md:grid-cols-2">
 
+              <div>
+                <h3 className="mb-3 flex items-center gap-2 font-semibold text-slate-900">
+                  <CheckCircle2
+                    size={18}
+                    className="text-green-600"
+                  />
+                  Matched Skills
+                </h3>
 
+                {matchResult.matched_skills?.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {matchResult.matched_skills.map(
+                      (skill, index) => (
+                        <span
+                          key={`${skill}-${index}`}
+                          className="
+                            rounded-full
+                            border
+                            border-green-100
+                            bg-green-50
+                            px-3
+                            py-1.5
+                            text-xs
+                            font-medium
+                            text-green-700
+                          "
+                        >
+                          {skill}
+                        </span>
+                      )
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400">
+                    No matched skills reported.
+                  </p>
+                )}
+              </div>
 
+              <div>
+                <h3 className="mb-3 flex items-center gap-2 font-semibold text-slate-900">
+                  <XCircle
+                    size={18}
+                    className="text-red-500"
+                  />
+                  Missing Skills
+                </h3>
 
-          <div className="mt-8">
+                {matchResult.missing_skills?.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {matchResult.missing_skills.map(
+                      (skill, index) => (
+                        <span
+                          key={`${skill}-${index}`}
+                          className="
+                            rounded-full
+                            border
+                            border-red-100
+                            bg-red-50
+                            px-3
+                            py-1.5
+                            text-xs
+                            font-medium
+                            text-red-700
+                          "
+                        >
+                          {skill}
+                        </span>
+                      )
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400">
+                    No missing skills reported.
+                  </p>
+                )}
+              </div>
 
-
-            <h3 className="font-bold text-green-700">
-
-              Matched Skills
-
-            </h3>
-
-
-            <p className="mt-2">
-
-              {matchResult.matched_skills.join(", ")}
-
-            </p>
-
-
+            </div>
           </div>
-
-
-
-
-          <div className="mt-6">
-
-
-            <h3 className="font-bold text-red-700">
-
-              Missing Skills
-
-            </h3>
-
-
-            <p className="mt-2 text-red-600">
-
-              {matchResult.missing_skills.join(", ")}
-
-            </p>
-
-
-          </div>
-
-
         </div>
-
-
       )}
-
-
-
     </div>
-
   );
-
 }

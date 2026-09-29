@@ -26,6 +26,7 @@ export default function RootLayout({ children }) {
     <html
       lang="en"
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <body className="page-background min-h-screen bg-white text-slate-900 antialiased">

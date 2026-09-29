@@ -3,19 +3,23 @@ import json
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.dependencies import get_current_user
 from app.database import get_db
 
 from app.models.candidate import Candidate
 from app.models.job import Job
 from app.models.match import Match
 
-from app.services.ats_score import calculate_match
+from app.services.matching import calculate_match
 
 
-router = APIRouter()
+router = APIRouter(
+    dependencies=[
+        Depends(get_current_user)
+    ]
+)
 
 
-# Create ATS match between any candidate and any job
 @router.post("/{candidate_id}/{job_id}")
 def match_candidate(
     candidate_id: str,
@@ -35,7 +39,6 @@ def match_candidate(
             detail="Candidate not found",
         )
 
-
     job = (
         db.query(Job)
         .filter(Job.id == job_id)
@@ -48,57 +51,86 @@ def match_candidate(
             detail="Job not found",
         )
 
-
-    candidate_skills = json.loads(
-        candidate.skills or "[]"
-    )
-
-
-    job_skills = json.loads(
-        job.required_skills or "[]"
-    )
-
-
     result = calculate_match(
-        " ".join(candidate_skills),
-        " ".join(job_skills),
+        candidate,
+        job,
     )
 
+    existing_match = (
+        db.query(Match)
+        .filter(
+            Match.candidate_id == candidate.id,
+            Match.job_id == job.id,
+        )
+        .first()
+    )
 
-    # Update latest candidate ATS score
+    if existing_match:
 
-    candidate.ats_score = result["ats_score"]
+        match = existing_match
 
+        match.match_score = result[
+            "match_score"
+        ]
 
-    # Save match history
-
-    match = Match(
-        candidate_id=candidate.id,
-        job_id=job.id,
-        ats_score=result["ats_score"],
-
-        matched_skills=json.dumps(
+        match.matched_skills = json.dumps(
             result["matched_skills"]
-        ),
+        )
 
-        missing_skills=json.dumps(
+        match.missing_skills = json.dumps(
             result["missing_skills"]
-        ),
+        )
 
-        extra_skills=json.dumps(
-            result["extra_skills"]
-        ),
-    )
+        match.extra_skills = json.dumps(
+            result.get(
+                "extra_skills",
+                [],
+            )
+        )
 
+        match.recommendation = result[
+            "recommendation"
+        ]
 
-    db.add(match)
+    else:
+
+        match = Match(
+
+            candidate_id=candidate.id,
+
+            job_id=job.id,
+
+            match_score=result[
+                "match_score"
+            ],
+
+            matched_skills=json.dumps(
+                result["matched_skills"]
+            ),
+
+            missing_skills=json.dumps(
+                result["missing_skills"]
+            ),
+
+            extra_skills=json.dumps(
+                result.get(
+                    "extra_skills",
+                    [],
+                )
+            ),
+
+            recommendation=result[
+                "recommendation"
+            ],
+        )
+
+        db.add(match)
 
     db.commit()
-
     db.refresh(match)
 
-
     return {
+
         "success": True,
 
         "match_id": match.id,
@@ -114,18 +146,63 @@ def match_candidate(
             "title": job.title,
         },
 
-        "ats_score": result["ats_score"],
+        "match_score": result[
+            "match_score"
+        ],
 
-        "matched_skills": result["matched_skills"],
+        "recommendation": result[
+            "recommendation"
+        ],
 
-        "missing_skills": result["missing_skills"],
+        "score_breakdown": result[
+            "score_breakdown"
+        ],
 
-        "extra_skills": result["extra_skills"],
+        "matched_skills": result[
+            "matched_skills"
+        ],
+
+        "missing_skills": result[
+            "missing_skills"
+        ],
+
+        "critical_missing_skills": result[
+            "critical_missing_skills"
+        ],
+
+        "experience_analysis": result[
+            "experience_analysis"
+        ],
+
+        "role_analysis": result[
+            "role_analysis"
+        ],
+
+        "semantic_analysis": result[
+            "semantic_analysis"
+        ],
+
+        "project_analysis": result[
+            "project_analysis"
+        ],
+
+        "education_analysis": result[
+            "education_analysis"
+        ],
+
+        "certification_analysis": result[
+            "certification_analysis"
+        ],
+
+        "resume_quality": result[
+            "resume_quality"
+        ],
+
+        "extra_skills": result[
+            "extra_skills"
+        ],
     }
 
-
-
-# Get all ATS match history
 
 @router.get("/")
 def get_matches(
@@ -134,10 +211,11 @@ def get_matches(
 
     matches = (
         db.query(Match)
-        .order_by(Match.created_at.desc())
+        .order_by(
+            Match.created_at.desc()
+        )
         .all()
     )
-
 
     return {
         "success": True,
@@ -145,9 +223,6 @@ def get_matches(
         "matches": matches,
     }
 
-
-
-# Get single match result
 
 @router.get("/{match_id}")
 def get_match(
@@ -157,17 +232,17 @@ def get_match(
 
     match = (
         db.query(Match)
-        .filter(Match.id == match_id)
+        .filter(
+            Match.id == match_id
+        )
         .first()
     )
-
 
     if not match:
         raise HTTPException(
             status_code=404,
             detail="Match not found",
         )
-
 
     return {
         "success": True,

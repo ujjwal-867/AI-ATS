@@ -1,21 +1,22 @@
 import request from "./api";
 
-export async function uploadResume(file) {
+
+export async function uploadResume(file){
+
   const formData = new FormData();
-  formData.append("resume", file);
 
-  return request("/api/upload/resume", {
-    method: "POST",
-    body: formData,
-  });
-}
+  formData.append(
+    "file",
+    file
+  );
 
-export async function uploadAvatar(file) {
-  const formData = new FormData();
-  formData.append("avatar", file);
 
-  return request("/api/upload/avatar", {
-    method: "POST",
-    body: formData,
-  });
+  return request(
+    "/api/upload/",
+    {
+      method:"POST",
+      body:formData,
+    }
+  );
+
 }

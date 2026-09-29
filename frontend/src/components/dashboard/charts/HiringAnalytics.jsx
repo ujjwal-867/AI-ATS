@@ -1,270 +1,315 @@
 "use client";
 
-import { useEffect,useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
 import {
+  AreaChart,
+  Area,
   CartesianGrid,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  Area,
-  AreaChart,
-  Line,
 } from "recharts";
-import { Loader2 } from "lucide-react";
 
-import { getAnalytics } from "@/services/api";
+import { motion } from "framer-motion";
+import { TrendingUp } from "lucide-react";
 
+import { getAnalytics } from "@/services/analytics.service";
 
-export default function HiringAnalytics(){
+export default function HiringAnalytics() {
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [data,setData] = useState([]);
-  const [loading,setLoading] = useState(true);
-
-
-  useEffect(()=>{
-
-    async function loadAnalytics(){
-
-      try{
+  useEffect(() => {
+    async function loadAnalytics() {
+      try {
+        setLoading(true);
+        setError("");
 
         const response = await getAnalytics();
 
-        setData(response);
+        setAnalytics(response);
+      } catch (err) {
+        console.error("Analytics loading error:", err);
 
-      }catch(error){
-
-        console.log(
-          "Analytics error",
-          error
+        setError(
+          err?.message || "Unable to load hiring analytics."
         );
-
-      }finally{
-
+      } finally {
         setLoading(false);
-
       }
-
     }
 
-
     loadAnalytics();
+  }, []);
 
-  },[]);
+  const chartData = useMemo(() => {
+    if (!analytics) {
+      return [];
+    }
 
+    /*
+      Backend response:
+      {
+        trend: [...]
+      }
+    */
 
+    if (Array.isArray(analytics.trend)) {
+      return analytics.trend;
+    }
 
-  if(loading){
+    /*
+      Support alternative response shapes
+      so the dashboard does not crash if the
+      API returns { data: { trend: [...] } }.
+    */
 
+    if (Array.isArray(analytics?.data?.trend)) {
+      return analytics.data.trend;
+    }
+
+    if (Array.isArray(analytics)) {
+      return analytics;
+    }
+
+    return [];
+  }, [analytics]);
+
+  const visibleData = useMemo(() => {
+    return Array.isArray(chartData)
+      ? chartData.slice(-6)
+      : [];
+  }, [chartData]);
+
+  if (loading) {
     return (
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <div className="h-6 w-48 animate-pulse rounded bg-slate-100" />
+            <div className="mt-2 h-4 w-64 animate-pulse rounded bg-slate-100" />
+          </div>
 
-      <div className="
-      flex
-      justify-center
-      p-3
-      ">
+          <div className="h-10 w-10 animate-pulse rounded-xl bg-slate-100" />
+        </div>
 
-        <Loader2
-          className="
-          animate-spin
-          text-[#D4AF37]
-          "
-          size={28}
-        />
-
-      </div>
-
+        <div className="h-[300px] animate-pulse rounded-xl bg-slate-50" />
+      </section>
     );
-
   }
 
+  if (error) {
+    return (
+      <section className="rounded-2xl border border-red-200 bg-white p-6 shadow-sm">
+        <div className="mb-2 text-sm font-semibold text-red-600">
+          Unable to load hiring analytics
+        </div>
 
+        <p className="text-sm text-slate-500">
+          {error}
+        </p>
+      </section>
+    );
+  }
+
+  if (!visibleData.length) {
+    return (
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">
+              Hiring Analytics
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Recruitment activity over the last six months
+            </p>
+          </div>
+
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+            <TrendingUp
+              size={20}
+              className="text-blue-600"
+            />
+          </div>
+        </div>
+
+        <div className="flex h-[300px] items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50">
+          <div className="text-center">
+            <p className="text-sm font-semibold text-slate-700">
+              No hiring data yet
+            </p>
+
+            <p className="mt-1 text-xs text-slate-500">
+              Candidate activity will appear here once recruitment data is available.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
-
     <motion.section
-
-      initial={{
-        opacity:0,
-        y:10,
-      }}
-
-      animate={{
-        opacity:1,
-        y:0,
-      }}
-
-      className="
-      rounded-2xl
-      border
-      border-slate-200
-      bg-white
-      p-4
-      shadow-sm
-      "
-
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
     >
-
-
-      <div className="
-      mb-3
-      flex
-      items-center
-      justify-between
-      ">
-
+      <div className="mb-6 flex items-center justify-between">
         <div>
-
-          <h2 className="
-          text-xl
-          font-bold
-          text-[#111827]
-          ">
+          <h2 className="text-lg font-bold text-slate-900">
             Hiring Analytics
           </h2>
 
-
-          <p className="
-          text-sm
-          text-slate-500
-          ">
-            Recruitment performance
+          <p className="mt-1 text-sm text-slate-500">
+            Recruitment activity over the last six months
           </p>
-
         </div>
 
-
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+          <TrendingUp
+            size={20}
+            className="text-blue-600"
+          />
+        </div>
       </div>
 
-
-
-      {
-        data.length === 0 ?
-
-        (
-
-          <div className="
-          flex
-          h-[220px]
-          items-center
-          justify-center
-          text-sm
-          text-slate-500
-          ">
-            No analytics data available
-          </div>
-
-        )
-
-        :
-
-        (
-
-          <div className="
-          h-[240px]
-          ">
-
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-            >
-
-              <AreaChart data={data}>
-
-
-                <defs>
-
-                  <linearGradient
-                    id="applications"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-
-                    <stop
-                      offset="5%"
-                      stopColor="#D4AF37"
-                      stopOpacity={0.3}
-                    />
-
-                    <stop
-                      offset="95%"
-                      stopColor="#D4AF37"
-                      stopOpacity={0}
-                    />
-
-                  </linearGradient>
-
-                </defs>
-
-
-
-                <CartesianGrid
-                  strokeDasharray="3 3"
+      {/* Important: explicit height prevents Recharts -1 width/height */}
+      <div className="h-[300px] min-h-[300px] w-full min-w-0">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          minWidth={0}
+          minHeight={0}
+        >
+          <AreaChart
+            data={visibleData}
+            margin={{
+              top: 10,
+              right: 10,
+              left: -10,
+              bottom: 0,
+            }}
+          >
+            <defs>
+              <linearGradient
+                id="hiringGradient"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop
+                  offset="0%"
+                  stopColor="#2563EB"
+                  stopOpacity={0.25}
                 />
 
-
-                <XAxis
-                  dataKey="month"
-                  fontSize={12}
+                <stop
+                  offset="100%"
+                  stopColor="#2563EB"
+                  stopOpacity={0}
                 />
+              </linearGradient>
+            </defs>
 
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="#E2E8F0"
+            />
 
-                <YAxis
-                  fontSize={12}
-                />
+            <XAxis
+              dataKey="month"
+              axisLine={false}
+              tickLine={false}
+              tick={{
+                fontSize: 12,
+                fill: "#64748B",
+              }}
+            />
 
+            <YAxis
+              allowDecimals={false}
+              axisLine={false}
+              tickLine={false}
+              tick={{
+                fontSize: 12,
+                fill: "#64748B",
+              }}
+            />
 
-                <Tooltip />
+            <Tooltip
+              contentStyle={{
+                borderRadius: "12px",
+                border: "1px solid #E2E8F0",
+                boxShadow:
+                  "0 10px 30px rgba(15, 23, 42, 0.08)",
+              }}
+              labelStyle={{
+                color: "#0F172A",
+                fontWeight: 600,
+              }}
+            />
 
+            <Area
+              type="monotone"
+              dataKey="applications"
+              name="Applications"
+              stroke="#2563EB"
+              strokeWidth={3}
+              fill="url(#hiringGradient)"
+              activeDot={{
+                r: 5,
+              }}
+            />
 
+            <Area
+              type="monotone"
+              dataKey="interviews"
+              name="Interviews"
+              stroke="#16A34A"
+              strokeWidth={2}
+              fill="transparent"
+              activeDot={{
+                r: 4,
+              }}
+            />
 
-                <Area
+            <Area
+              type="monotone"
+              dataKey="selected"
+              name="Selected"
+              stroke="#D4AF37"
+              strokeWidth={2}
+              fill="transparent"
+              activeDot={{
+                r: 4,
+              }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
 
-                  type="monotone"
+      <div className="mt-5 flex flex-wrap items-center gap-5 text-xs text-slate-500">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
+          Applications
+        </div>
 
-                  dataKey="applications"
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-green-600" />
+          Interviews
+        </div>
 
-                  stroke="#D4AF37"
-
-                  strokeWidth={3}
-
-                  fill="url(#applications)"
-
-                />
-
-
-
-                <Line
-
-                  type="monotone"
-
-                  dataKey="hired"
-
-                  stroke="#22C55E"
-
-                  strokeWidth={3}
-
-                />
-
-
-              </AreaChart>
-
-
-            </ResponsiveContainer>
-
-
-          </div>
-
-        )
-
-      }
-
-
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#D4AF37]" />
+          Selected
+        </div>
+      </div>
     </motion.section>
-
   );
-
 }

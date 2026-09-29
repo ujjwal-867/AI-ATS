@@ -1,57 +1,50 @@
-import json
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies import get_current_user
+
 from app.models.job import Job
-from app.schemas.job import JobCreate, JobResponse
-from app.services.ats_score import extract_skills
+from app.models.match import Match
+
+from app.schemas.job import (
+    JobCreate,
+    JobUpdate,
+    JobResponse,
+)
 
 
 router = APIRouter()
 
 
-@router.post("/", response_model=JobResponse)
-def create_job(
-    job: JobCreate,
-    db: Session = Depends(get_db),
-):
-    skills = extract_skills(job.description)
+# =========================================================
+# GET ALL JOBS
+# =========================================================
 
-    new_job = Job(
-        title=job.title,
-        company=job.company,
-        location=job.location,
-        employment_type=job.employment_type,
-        experience=job.experience,
-        salary=job.salary,
-        description=job.description,
-        required_skills=json.dumps(skills),
-    )
-
-    db.add(new_job)
-    db.commit()
-    db.refresh(new_job)
-
-    return new_job
-
-
-@router.get("/", response_model=list[JobResponse])
+@router.get("")
+@router.get("/")
 def get_jobs(
     db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
 ):
-    return (
+    jobs = (
         db.query(Job)
         .order_by(Job.created_at.desc())
         .all()
     )
 
+    return jobs
 
-@router.get("/{job_id}", response_model=JobResponse)
+
+# =========================================================
+# GET SINGLE JOB
+# =========================================================
+
+@router.get("/{job_id}")
 def get_job(
     job_id: str,
     db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
 ):
     job = (
         db.query(Job)
@@ -62,16 +55,60 @@ def get_job(
     if not job:
         raise HTTPException(
             status_code=404,
-            detail="Job not found.",
+            detail="Job not found",
         )
 
     return job
 
 
-@router.delete("/{job_id}")
-def delete_job(
-    job_id: str,
+# =========================================================
+# CREATE JOB
+# =========================================================
+
+@router.post(
+    "",
+    response_model=JobResponse,
+)
+@router.post(
+    "/",
+    response_model=JobResponse,
+)
+def create_job(
+    job_data: JobCreate,
     db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    job = Job(
+        title=job_data.title,
+        company=job_data.company,
+        location=job_data.location,
+        employment_type=job_data.employment_type,
+        experience=job_data.experience,
+        salary=job_data.salary,
+        description=job_data.description,
+        status="Open",
+    )
+
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    return job
+
+
+# =========================================================
+# UPDATE JOB
+# =========================================================
+
+@router.put(
+    "/{job_id}",
+    response_model=JobResponse,
+)
+def update_job(
+    job_id: str,
+    job_data: JobUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
 ):
     job = (
         db.query(Job)
@@ -82,13 +119,70 @@ def delete_job(
     if not job:
         raise HTTPException(
             status_code=404,
-            detail="Job not found.",
+            detail="Job not found",
         )
 
-    db.delete(job)
-    db.commit()
+    update_data = job_data.model_dump(
+        exclude_unset=True
+    )
 
-    return {
-        "success": True,
-        "message": "Job deleted successfully.",
-    }
+    for field, value in update_data.items():
+        setattr(job, field, value)
+
+    db.commit()
+    db.refresh(job)
+
+    return job
+
+
+# =========================================================
+# DELETE JOB
+# =========================================================
+
+@router.delete("/{job_id}")
+def delete_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    job = (
+        db.query(Job)
+        .filter(Job.id == job_id)
+        .first()
+    )
+
+    if not job:
+        raise HTTPException(
+            status_code=404,
+            detail="Job not found",
+        )
+
+    try:
+        # -------------------------------------------------
+        # Delete related matches first because
+        # matches.job_id references jobs.id.
+        # -------------------------------------------------
+
+        db.query(Match).filter(
+            Match.job_id == job_id
+        ).delete(
+            synchronize_session=False
+        )
+
+        db.delete(job)
+
+        db.commit()
+
+        return {
+            "success": True,
+            "message": "Job deleted successfully",
+            "job_id": job_id,
+        }
+
+    except Exception:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to delete job",
+        )

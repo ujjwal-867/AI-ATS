@@ -23,43 +23,110 @@ const testimonials = [
   },
 ];
 
+
 export default function Testimonials() {
+
   return (
-    <section className="bg-slate-950 py-24 px-8">
-      <div className="max-w-7xl mx-auto">
-        <h2 className="text-5xl font-bold text-center text-white mb-16">
+
+    <section className="bg-slate-950 px-8 py-24">
+
+      <div className="mx-auto max-w-7xl">
+
+        <h2 className="
+          mb-16
+          text-center
+          text-5xl
+          font-bold
+          text-white
+        ">
           Trusted by Recruiters
         </h2>
 
-        <div className="grid md:grid-cols-3 gap-8">
+
+        <div className="
+          grid
+          gap-8
+          md:grid-cols-3
+        ">
+
           {testimonials.map((item, index) => (
+
             <motion.div
+
               key={item.name}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.15 }}
-              whileHover={{ y: -10 }}
-              className="rounded-3xl border border-slate-800 bg-white/5 backdrop-blur-xl p-8"
+
+              initial={{
+                opacity: 0,
+                y: 30,
+              }}
+
+              whileInView={{
+                opacity: 1,
+                y: 0,
+              }}
+
+              transition={{
+                delay: index * 0.15,
+              }}
+
+              whileHover={{
+                y: -10,
+              }}
+
+              className="
+                rounded-3xl
+                border
+                border-slate-800
+                bg-white/5
+                p-8
+                backdrop-blur-xl
+              "
+
             >
-              <div className="text-yellow-400 text-xl mb-4">
+
+              <div className="
+                mb-4
+                text-xl
+                text-yellow-400
+              ">
                 ★★★★★
               </div>
 
-              <p className="text-slate-300 mb-6">
-                "{item.text}"
+
+              <p className="
+                mb-6
+                text-slate-300
+              ">
+                &quot;{item.text}&quot;
               </p>
 
-              <h3 className="text-white font-bold">
+
+              <h3 className="
+                font-bold
+                text-white
+              ">
                 {item.name}
               </h3>
 
-              <p className="text-slate-400 text-sm">
+
+              <p className="
+                text-sm
+                text-slate-400
+              ">
                 {item.role} • {item.company}
               </p>
+
+
             </motion.div>
+
           ))}
+
         </div>
+
       </div>
+
     </section>
+
   );
+
 }
