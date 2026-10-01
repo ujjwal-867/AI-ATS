@@ -6,9 +6,14 @@ from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies import get_current_user
 from app.services.resume_service import upload_resume
 
-router = APIRouter()
+router = APIRouter(
+    dependencies=[
+        Depends(get_current_user)
+    ]
+)
 
 
 @router.post("/")

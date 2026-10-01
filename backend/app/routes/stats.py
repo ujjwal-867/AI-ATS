@@ -67,35 +67,27 @@ def dashboard_stats(
         .count()
     )
 
-    selected = (
+    offer = (
         db.query(Candidate)
-        .filter(
-            Candidate.status == "Selected"
-        )
+        .filter(Candidate.status == "Offer")
+        .count()
+    )
+
+    hired = (
+        db.query(Candidate)
+        .filter(Candidate.status == "Hired")
         .count()
     )
 
     rejected = (
         db.query(Candidate)
-        .filter(
-            Candidate.status == "Rejected"
-        )
-        .count()
-    )
-
-    on_hold = (
-        db.query(Candidate)
-        .filter(
-            Candidate.interview_result == "On Hold"
-        )
+        .filter(Candidate.status == "Rejected")
         .count()
     )
 
     # ATS
     average_ats = (
-        db.query(
-            func.avg(Candidate.ats_score)
-        )
+        db.query(func.avg(Candidate.ats_score))
         .scalar()
     )
 
@@ -104,15 +96,17 @@ def dashboard_stats(
         "activeJobs": active_jobs,
         "totalJobs": total_jobs,
         "interviews": interviews,
-        "averageATS": round(
-            average_ats or 0
-        ),
+        "hired": hired,
+        "averageATS": round(average_ats or 0),
         "pipeline": {
             "Applied": applied,
             "Screening": screening,
             "Interview": interviews,
-            "Selected": selected,
+            "Offer": offer,
+            "Hired": hired,
             "Rejected": rejected,
-            "On Hold": on_hold,
         },
+        # Aliases used by dashboard components
+        "shortlisted": screening,
+        "pending": applied,
     }

@@ -281,8 +281,8 @@ export default function HiringAnalytics() {
 
             <Area
               type="monotone"
-              dataKey="selected"
-              name="Selected"
+              dataKey="hired"
+              name="Hired"
               stroke="#D4AF37"
               strokeWidth={2}
               fill="transparent"
@@ -307,7 +307,7 @@ export default function HiringAnalytics() {
 
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-[#D4AF37]" />
-          Selected
+          Hired
         </div>
       </div>
     </motion.section>

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import AIAgent from "@/components/chat/AIAgent";
 
 export default function AppLayout({ children }) {
   return (
@@ -37,6 +38,7 @@ export default function AppLayout({ children }) {
           {children}
         </main>
       </motion.div>
+      <AIAgent />
     </div>
   );
 }

@@ -9,6 +9,11 @@ export function middleware(request) {
     "/analytics",
     "/match",
     "/ats",
+    "/candidates",
+    "/jobs",
+    "/pipeline",
+    "/interviews",
+    "/settings",
   ];
 
   const isProtected = protectedRoutes.some((route) =>
@@ -29,5 +34,10 @@ export const config = {
     "/analytics/:path*",
     "/match/:path*",
     "/ats/:path*",
+    "/candidates/:path*",
+    "/jobs/:path*",
+    "/pipeline/:path*",
+    "/interviews/:path*",
+    "/settings/:path*",
   ],
 };

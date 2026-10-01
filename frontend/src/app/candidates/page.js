@@ -42,9 +42,9 @@ const STATUS_OPTIONS = [
   "Applied",
   "Screening",
   "Interview",
-  "Selected",
+  "Offer",
+  "Hired",
   "Rejected",
-  "On Hold",
 ];
 
 export default function CandidatesPage() {
@@ -337,13 +337,11 @@ export default function CandidatesPage() {
     const total = candidates.length;
 
     const interviews = candidates.filter(
-      (candidate) =>
-        candidate.status === "Interview"
+      (candidate) => candidate.status === "Interview"
     ).length;
 
-    const selected = candidates.filter(
-      (candidate) =>
-        candidate.status === "Selected"
+    const hired = candidates.filter(
+      (candidate) => candidate.status === "Hired"
     ).length;
 
     const average =
@@ -351,22 +349,15 @@ export default function CandidatesPage() {
         ? Math.round(
             candidates.reduce(
               (sum, candidate) =>
-                sum +
-                Number(
-                  candidate.ats_score || 0
-                ),
+                sum + Number(candidate.ats_score || 0),
               0
             ) / total
           )
         : 0;
 
-    return {
-      total,
-      interviews,
-      selected,
-      average,
-    };
+    return { total, interviews, hired, average };
   }, [candidates]);
+
 
   return (
     <ProtectedRoute>
@@ -456,8 +447,8 @@ export default function CandidatesPage() {
                 />
 
                 <SummaryCard
-                  label="Selected"
-                  value={summary.selected}
+                  label="Hired"
+                  value={summary.hired}
                   icon={CheckCircle2}
                 />
 
@@ -1012,12 +1003,10 @@ function CandidateRow({
             <Pencil size={16} />
           </IconButton>
 
-          {candidate.status !==
-            "Interview" &&
-            candidate.status !==
-              "Selected" &&
-            candidate.status !==
-              "Rejected" && (
+          {candidate.status !== "Interview" &&
+            candidate.status !== "Offer" &&
+            candidate.status !== "Hired" &&
+            candidate.status !== "Rejected" && (
               <IconButton
                 title="Schedule interview"
                 onClick={onSchedule}
@@ -1053,36 +1042,22 @@ function CandidateRow({
    STATUS BADGE
 ===================================================== */
 
-function StatusBadge({
-  status,
-}) {
-  const normalized =
-    status?.toLowerCase() ||
-    "applied";
+function StatusBadge({ status }) {
+  const normalized = status?.toLowerCase() || "applied";
 
   const styles = {
-    applied:
-      "bg-blue-50 text-blue-700",
-    screening:
-      "bg-purple-50 text-purple-700",
-    interview:
-      "bg-amber-50 text-amber-700",
-    selected:
-      "bg-green-50 text-green-700",
-    rejected:
-      "bg-red-50 text-red-700",
-    "on hold":
-      "bg-slate-100 text-slate-700",
+    applied:   "bg-blue-50 text-blue-700 border-blue-100",
+    screening: "bg-purple-50 text-purple-700 border-purple-100",
+    interview: "bg-amber-50 text-amber-700 border-amber-100",
+    offer:     "bg-cyan-50 text-cyan-700 border-cyan-100",
+    hired:     "bg-green-50 text-green-700 border-green-100",
+    rejected:  "bg-red-50 text-red-700 border-red-100",
   };
 
-  const style =
-    styles[normalized] ||
-    "bg-slate-100 text-slate-700";
+  const style = styles[normalized] || "bg-slate-100 text-slate-700 border-slate-200";
 
   return (
-    <span
-      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${style}`}
-    >
+    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${style}`}>
       {status || "Applied"}
     </span>
   );
@@ -1231,12 +1206,10 @@ function CandidateModal({
               </a>
             )}
 
-            {candidate.status !==
-              "Interview" &&
-              candidate.status !==
-                "Selected" &&
-              candidate.status !==
-                "Rejected" && (
+            {candidate.status !== "Interview" &&
+              candidate.status !== "Offer" &&
+              candidate.status !== "Hired" &&
+              candidate.status !== "Rejected" && (
                 <button
                   type="button"
                   onClick={onSchedule}
@@ -1762,7 +1735,7 @@ function CompleteInterviewModal({
   onSubmit,
 }) {
   const [form, setForm] = useState({
-    result: "Selected",
+    result: "Hired",
     score: "",
     feedback: "",
   });
@@ -1828,15 +1801,9 @@ function CompleteInterviewModal({
             }
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           >
-            <option value="Selected">
-              Selected
-            </option>
-            <option value="Rejected">
-              Rejected
-            </option>
-            <option value="On Hold">
-              On Hold
-            </option>
+            <option value="Offer">Offer</option>
+            <option value="Hired">Hired</option>
+            <option value="Rejected">Rejected</option>
           </select>
         </div>
 

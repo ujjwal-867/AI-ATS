@@ -23,6 +23,7 @@ from app.routes import (
     ranking,
     activity,
     notifications,
+    agent,
 )
 
 
@@ -149,6 +150,15 @@ app.include_router(
     notifications.router,
     prefix="/api/notifications",
     tags=["Notifications"],
+)
+
+
+
+# AI Agent
+app.include_router(
+    agent.router,
+    prefix="/api/agent",
+    tags=["Agent"],
 )
 
 

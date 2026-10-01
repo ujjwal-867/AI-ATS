@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from app.dependencies import get_current_user
@@ -276,6 +276,13 @@ def delete_candidate(
             detail="Candidate not found",
         )
 
+    # Delete resume file if it exists
+    if candidate.resume_url:
+        from pathlib import Path
+        resume_file = Path(candidate.resume_url)
+        if resume_file.exists():
+            resume_file.unlink()
+
     db.delete(candidate)
     db.commit()
 
@@ -447,7 +454,7 @@ def complete_interview(
         else None
     )
 
-    candidate.interview_completed_at = datetime.utcnow()
+    candidate.interview_completed_at = datetime.now(timezone.utc)
 
     # -----------------------------------------------------
     # Update recruitment status

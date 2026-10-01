@@ -56,6 +56,14 @@ def match_candidate(
         job,
     )
 
+    # Generate AI explanation
+    ai_explanation = ""
+    try:
+        from app.services.ai_explainer import explain_match
+        ai_explanation = explain_match(result, job_title=job.title or "")
+    except Exception as e:
+        print(f"AI explanation skipped: {e}")
+
     existing_match = (
         db.query(Match)
         .filter(
@@ -126,6 +134,9 @@ def match_candidate(
 
         db.add(match)
 
+    # Keep candidate's stored ATS score in sync with the latest match result
+    candidate.ats_score = result["match_score"]
+
     db.commit()
     db.refresh(match)
 
@@ -153,6 +164,8 @@ def match_candidate(
         "recommendation": result[
             "recommendation"
         ],
+
+        "ai_explanation": ai_explanation,
 
         "score_breakdown": result[
             "score_breakdown"

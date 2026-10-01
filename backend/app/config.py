@@ -5,6 +5,9 @@ class Settings(BaseSettings):
     APP_NAME: str = "AI ATS Backend"
     APP_VERSION: str = "1.0.0"
 
+    DEBUG: bool = False
+    GEMINI_API_KEY: str = ""
+
     DATABASE_URL: str
 
     JWT_SECRET: str

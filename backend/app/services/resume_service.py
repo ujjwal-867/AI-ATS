@@ -1,6 +1,5 @@
 from pathlib import Path
 import json
-import shutil
 import uuid
 
 from fastapi import HTTPException
@@ -12,6 +11,8 @@ from app.services.resume_parser import parse_resume
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
+
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 async def upload_resume(
@@ -31,15 +32,19 @@ async def upload_resume(
             detail="Only PDF and DOCX are allowed.",
         )
 
-    filename = f"{uuid.uuid4()}{extension}"
+    # Read file content and validate size
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail="File too large. Maximum size is 10 MB.",
+        )
 
+    filename = f"{uuid.uuid4()}{extension}"
     filepath = UPLOAD_DIR / filename
 
     with filepath.open("wb") as buffer:
-        shutil.copyfileobj(
-            file.file,
-            buffer,
-        )
+        buffer.write(content)
 
     parsed = parse_resume(str(filepath))
 
@@ -62,6 +67,11 @@ async def upload_resume(
     # UPDATE EXISTING CANDIDATE
     # ----------------------------
     if existing:
+        # Clean up old resume file if different
+        if existing.resume_url and existing.resume_url != str(filepath):
+            old_file = Path(existing.resume_url)
+            if old_file.exists():
+                old_file.unlink()
 
         existing.name = parsed.get("name") or existing.name
         existing.phone = parsed.get("phone")

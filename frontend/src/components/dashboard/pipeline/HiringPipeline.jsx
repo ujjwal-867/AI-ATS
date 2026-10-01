@@ -35,18 +35,19 @@ const stages = [
     bg: "bg-indigo-50",
   },
   {
-    title: "Selected",
+    title: "Offer",
     icon: BadgeCheck,
+    color: "text-amber-600",
+    bg: "bg-amber-50",
+  },
+  {
+    title: "Hired",
+    icon: Trophy,
     color: "text-green-600",
     bg: "bg-green-50",
   },
-  {
-    title: "Rejected",
-    icon: Trophy,
-    color: "text-red-600",
-    bg: "bg-red-50",
-  },
 ];
+
 
 
 
