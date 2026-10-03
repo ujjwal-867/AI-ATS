@@ -127,10 +127,31 @@ export default function PipelinePage() {
   const pipeline = useMemo(() => {
     const source = stats?.pipeline || {};
 
-    return stages.map((stage) => ({
-      ...stage,
-      count: Number(source[stage.key] || 0),
-    }));
+    return stages.map((stage) => {
+      let count = 0;
+      if (stage.key === "Selected") {
+        count = Number(
+          source["Selected"] ??
+          source["Hired"] ??
+          stats?.selected ??
+          stats?.hired ??
+          0
+        );
+      } else if (stage.key === "Interview") {
+        count = Number(
+          source["Interview"] ??
+          stats?.interviews ??
+          0
+        );
+      } else {
+        count = Number(source[stage.key] || 0);
+      }
+
+      return {
+        ...stage,
+        count,
+      };
+    });
   }, [stats]);
 
   const totalCandidates = Number(
@@ -149,7 +170,11 @@ export default function PipelinePage() {
   );
 
   const selected = Number(
-    stats?.pipeline?.Selected || 0
+    stats?.pipeline?.Selected ??
+    stats?.pipeline?.Hired ??
+    stats?.selected ??
+    stats?.hired ??
+    0
   );
 
   const rejected = Number(

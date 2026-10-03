@@ -125,7 +125,7 @@ def get_interview_candidates(
         db.query(Candidate)
         .filter(
             Candidate.user_id == current_user["user_id"],
-            Candidate.status == "Interview",
+            Candidate.status.in_(["Interview", "Technical Interview", "HR Interview"]),
         )
         .order_by(
             Candidate.interview_date.asc()
@@ -481,7 +481,7 @@ def complete_interview(
     # Update recruitment status
     # -----------------------------------------------------
 
-    if interview.result == "Selected":
+    if interview.result in ["Selected", "Hired"]:
 
         candidate.status = "Selected"
 

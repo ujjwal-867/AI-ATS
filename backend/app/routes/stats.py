@@ -53,7 +53,7 @@ def dashboard_stats(
         db.query(Candidate)
         .filter(
             Candidate.user_id == uid,
-            Candidate.status == "Interview",
+            Candidate.status.in_(["Interview", "Technical Interview", "HR Interview"]),
         )
         .count()
     )
@@ -89,7 +89,7 @@ def dashboard_stats(
         db.query(Candidate)
         .filter(
             Candidate.user_id == uid,
-            Candidate.status == "Hired",
+            Candidate.status.in_(["Hired", "Selected"]),
         )
         .count()
     )
@@ -116,6 +116,7 @@ def dashboard_stats(
         "totalJobs": total_jobs,
         "interviews": interviews,
         "hired": hired,
+        "selected": hired,
         "averageATS": round(average_ats or 0),
         "pipeline": {
             "Applied": applied,
@@ -123,6 +124,7 @@ def dashboard_stats(
             "Interview": interviews,
             "Offer": offer,
             "Hired": hired,
+            "Selected": hired,
             "Rejected": rejected,
         },
         # Aliases used by dashboard components

@@ -264,7 +264,9 @@ export default function HiringPipeline() {
                   font-bold
                   text-slate-900
                 ">
-                  {pipeline[stage.title] || 0}
+                  {stage.title === "Hired"
+                    ? (pipeline?.Hired ?? pipeline?.Selected ?? 0)
+                    : (pipeline[stage.title] || 0)}
                 </span>
 
                 {" "}Candidates

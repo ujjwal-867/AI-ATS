@@ -48,7 +48,9 @@ export default function CandidateTable(){
 
     const matchStatus=
       status==="All" ||
-      candidate.status===status;
+      candidate.status===status ||
+      (status==="Hired" && candidate.status==="Selected") ||
+      (status==="Selected" && candidate.status==="Hired");
 
 
     const matchScore=

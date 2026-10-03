@@ -23,10 +23,12 @@ class UpdateStatusRequest(BaseModel):
 VALID_STATUS = [
     "Applied",
     "Screening",
+    "Interview",
     "Technical Interview",
     "HR Interview",
     "Offer",
     "Hired",
+    "Selected",
     "Rejected",
 ]
 

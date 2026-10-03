@@ -1282,6 +1282,9 @@ function StatusBadge({
     Selected:
       "bg-green-50 text-green-700 border-green-100",
 
+    Hired:
+      "bg-green-50 text-green-700 border-green-100",
+
     Rejected:
       "bg-red-50 text-red-700 border-red-100",
 

@@ -15,7 +15,7 @@ import {getCandidates} from "@/services/api";
 
 function badge(status){
 
-if(status==="Hired")
+if(status==="Hired" || status==="Selected")
 return "bg-green-50 text-green-600";
 
 if(status==="Interview")
@@ -23,6 +23,9 @@ return "bg-blue-50 text-blue-600";
 
 if(status==="Screening")
 return "bg-cyan-50 text-cyan-600";
+
+if(status==="Rejected")
+return "bg-red-50 text-red-600";
 
 return "bg-slate-50 text-slate-600";
 

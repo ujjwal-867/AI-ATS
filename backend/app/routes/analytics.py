@@ -48,7 +48,7 @@ def get_analytics(
         db.query(Candidate)
         .filter(
             Candidate.user_id == uid,
-            Candidate.status == "Interview",
+            Candidate.status.in_(["Interview", "Technical Interview", "HR Interview"]),
         )
         .count()
     )
@@ -65,7 +65,7 @@ def get_analytics(
         db.query(Candidate)
         .filter(
             Candidate.user_id == uid,
-            Candidate.status == "Selected",
+            Candidate.status.in_(["Selected", "Hired"]),
         )
         .count()
     )
@@ -135,14 +135,33 @@ def get_analytics(
     pipeline = []
 
     for status in statuses:
-        count = (
-            db.query(Candidate)
-            .filter(
-                Candidate.user_id == uid,
-                Candidate.status == status,
+        if status == "Selected":
+            count = (
+                db.query(Candidate)
+                .filter(
+                    Candidate.user_id == uid,
+                    Candidate.status.in_(["Selected", "Hired"]),
+                )
+                .count()
             )
-            .count()
-        )
+        elif status == "Interview":
+            count = (
+                db.query(Candidate)
+                .filter(
+                    Candidate.user_id == uid,
+                    Candidate.status.in_(["Interview", "Technical Interview", "HR Interview"]),
+                )
+                .count()
+            )
+        else:
+            count = (
+                db.query(Candidate)
+                .filter(
+                    Candidate.user_id == uid,
+                    Candidate.status == status,
+                )
+                .count()
+            )
 
         pipeline.append(
             {
@@ -252,7 +271,7 @@ def get_analytics(
             db.query(Candidate)
             .filter(
                 Candidate.user_id == uid,
-                Candidate.status == "Selected",
+                Candidate.status.in_(["Selected", "Hired"]),
                 Candidate.created_at >= month_start,
                 Candidate.created_at < next_month,
             )

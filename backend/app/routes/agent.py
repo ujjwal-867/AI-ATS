@@ -626,7 +626,7 @@ Create a structured comparison with:
 
     # ── update_candidate_status ────────────────────────────────────────────
     if name == "update_candidate_status":
-        valid = {"Applied", "Screening", "Interview", "Offer", "Hired", "Rejected"}
+        valid = {"Applied", "Screening", "Interview", "Offer", "Hired", "Selected", "Rejected"}
         new_status = args.get("new_status", "").strip()
         if new_status not in valid:
             return {"error": f"Invalid status '{new_status}'. Choose from: {sorted(valid)}"}
@@ -640,7 +640,7 @@ Create a structured comparison with:
 
     # ── bulk_update_status ─────────────────────────────────────────────────
     if name == "bulk_update_status":
-        valid = {"Applied", "Screening", "Interview", "Offer", "Hired", "Rejected"}
+        valid = {"Applied", "Screening", "Interview", "Offer", "Hired", "Selected", "Rejected"}
         new_status = args.get("new_status", "").strip()
         if new_status not in valid:
             return {"error": f"Invalid status '{new_status}'."}
@@ -663,7 +663,7 @@ Create a structured comparison with:
         threshold = float(args.get("threshold", 40))
         rejected = []
         for c in db.query(Candidate).filter(Candidate.user_id == user_id).all():
-            if (c.ats_score or 0) < threshold and c.status not in ("Hired", "Offer"):
+            if (c.ats_score or 0) < threshold and c.status not in ("Hired", "Offer", "Selected"):
                 c.status = "Rejected"
                 rejected.append({"name": c.name, "id": c.id, "score": c.ats_score})
         db.commit()

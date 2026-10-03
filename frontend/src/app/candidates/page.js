@@ -44,6 +44,7 @@ const STATUS_OPTIONS = [
   "Interview",
   "Offer",
   "Hired",
+  "Selected",
   "Rejected",
 ];
 
@@ -310,7 +311,9 @@ export default function CandidatesPage() {
 
       const matchesStatus =
         status === "All" ||
-        candidate.status === status;
+        candidate.status === status ||
+        (status === "Hired" && candidate.status === "Selected") ||
+        (status === "Selected" && candidate.status === "Hired");
 
       const score = Number(
         candidate.ats_score || 0
@@ -337,11 +340,16 @@ export default function CandidatesPage() {
     const total = candidates.length;
 
     const interviews = candidates.filter(
-      (candidate) => candidate.status === "Interview"
+      (candidate) =>
+        candidate.status === "Interview" ||
+        candidate.status === "Technical Interview" ||
+        candidate.status === "HR Interview"
     ).length;
 
     const hired = candidates.filter(
-      (candidate) => candidate.status === "Hired"
+      (candidate) =>
+        candidate.status === "Hired" ||
+        candidate.status === "Selected"
     ).length;
 
     const average =
@@ -1006,6 +1014,7 @@ function CandidateRow({
           {candidate.status !== "Interview" &&
             candidate.status !== "Offer" &&
             candidate.status !== "Hired" &&
+            candidate.status !== "Selected" &&
             candidate.status !== "Rejected" && (
               <IconButton
                 title="Schedule interview"
@@ -1051,6 +1060,7 @@ function StatusBadge({ status }) {
     interview: "bg-amber-50 text-amber-700 border-amber-100",
     offer:     "bg-cyan-50 text-cyan-700 border-cyan-100",
     hired:     "bg-green-50 text-green-700 border-green-100",
+    selected:  "bg-green-50 text-green-700 border-green-100",
     rejected:  "bg-red-50 text-red-700 border-red-100",
   };
 
