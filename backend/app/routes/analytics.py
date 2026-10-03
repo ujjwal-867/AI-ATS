@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func
@@ -7,10 +7,6 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.candidate import Candidate
 from app.models.job import Job
-
-
-from fastapi import Depends
-
 from app.dependencies import get_current_user
 
 router = APIRouter(
@@ -28,26 +24,31 @@ def month_label(value):
 @router.get("/")
 def get_analytics(
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
+    uid = current_user["user_id"]
+
     # =========================================================
     # CORE METRICS
     # =========================================================
 
     total_candidates = (
         db.query(Candidate)
+        .filter(Candidate.user_id == uid)
         .count()
     )
 
     active_jobs = (
         db.query(Job)
-        .filter(Job.status == "Open")
+        .filter(Job.user_id == uid, Job.status == "Open")
         .count()
     )
 
     interviews = (
         db.query(Candidate)
         .filter(
-            Candidate.status == "Interview"
+            Candidate.user_id == uid,
+            Candidate.status == "Interview",
         )
         .count()
     )
@@ -56,13 +57,15 @@ def get_analytics(
         db.query(
             func.avg(Candidate.ats_score)
         )
+        .filter(Candidate.user_id == uid)
         .scalar()
     )
 
     selected = (
         db.query(Candidate)
         .filter(
-            Candidate.status == "Selected"
+            Candidate.user_id == uid,
+            Candidate.status == "Selected",
         )
         .count()
     )
@@ -70,7 +73,8 @@ def get_analytics(
     rejected = (
         db.query(Candidate)
         .filter(
-            Candidate.status == "Rejected"
+            Candidate.user_id == uid,
+            Candidate.status == "Rejected",
         )
         .count()
     )
@@ -78,7 +82,8 @@ def get_analytics(
     on_hold = (
         db.query(Candidate)
         .filter(
-            Candidate.interview_result == "On Hold"
+            Candidate.user_id == uid,
+            Candidate.interview_result == "On Hold",
         )
         .count()
     )
@@ -86,7 +91,8 @@ def get_analytics(
     completed_interviews = (
         db.query(Candidate)
         .filter(
-            Candidate.interview_result.isnot(None)
+            Candidate.user_id == uid,
+            Candidate.interview_result.isnot(None),
         )
         .count()
     )
@@ -132,7 +138,8 @@ def get_analytics(
         count = (
             db.query(Candidate)
             .filter(
-                Candidate.status == status
+                Candidate.user_id == uid,
+                Candidate.status == status,
             )
             .count()
         )
@@ -154,7 +161,8 @@ def get_analytics(
             "value": (
                 db.query(Candidate)
                 .filter(
-                    Candidate.ats_score < 40
+                    Candidate.user_id == uid,
+                    Candidate.ats_score < 40,
                 )
                 .count()
             ),
@@ -164,6 +172,7 @@ def get_analytics(
             "value": (
                 db.query(Candidate)
                 .filter(
+                    Candidate.user_id == uid,
                     Candidate.ats_score >= 40,
                     Candidate.ats_score < 60,
                 )
@@ -175,6 +184,7 @@ def get_analytics(
             "value": (
                 db.query(Candidate)
                 .filter(
+                    Candidate.user_id == uid,
                     Candidate.ats_score >= 60,
                     Candidate.ats_score < 80,
                 )
@@ -186,7 +196,8 @@ def get_analytics(
             "value": (
                 db.query(Candidate)
                 .filter(
-                    Candidate.ats_score >= 80
+                    Candidate.user_id == uid,
+                    Candidate.ats_score >= 80,
                 )
                 .count()
             ),
@@ -197,12 +208,13 @@ def get_analytics(
     # LAST 6 MONTHS
     # =========================================================
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     first_month = datetime(
         now.year,
         now.month,
         1,
+        tzinfo=timezone.utc,
     )
 
     months = []
@@ -229,6 +241,7 @@ def get_analytics(
         applications = (
             db.query(Candidate)
             .filter(
+                Candidate.user_id == uid,
                 Candidate.created_at >= month_start,
                 Candidate.created_at < next_month,
             )
@@ -238,6 +251,7 @@ def get_analytics(
         selected_count = (
             db.query(Candidate)
             .filter(
+                Candidate.user_id == uid,
                 Candidate.status == "Selected",
                 Candidate.created_at >= month_start,
                 Candidate.created_at < next_month,
@@ -248,6 +262,7 @@ def get_analytics(
         completed_count = (
             db.query(Candidate)
             .filter(
+                Candidate.user_id == uid,
                 Candidate.interview_result.isnot(None),
                 Candidate.interview_completed_at >= month_start,
                 Candidate.interview_completed_at < next_month,
@@ -272,6 +287,7 @@ def get_analytics(
 
     recent_candidates = (
         db.query(Candidate)
+        .filter(Candidate.user_id == uid)
         .order_by(
             Candidate.created_at.desc()
         )

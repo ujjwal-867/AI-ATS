@@ -397,12 +397,12 @@ def _candidate_full(c: Candidate) -> dict:
 # TOOL IMPLEMENTATIONS
 # ─────────────────────────────────────────────
 
-def _execute_tool(name: str, args: dict, db: Session) -> dict:  # noqa: C901
+def _execute_tool(name: str, args: dict, db: Session, user_id: str = "") -> dict:  # noqa: C901
     from app.services.gemini_client import generate_content
 
     # ── get_all_candidates ─────────────────────────────────────────────────
     if name == "get_all_candidates":
-        rows = db.query(Candidate).all()
+        rows = db.query(Candidate).filter(Candidate.user_id == user_id).all()
         return {
             "total": len(rows),
             "candidates": [_candidate_snapshot(c) for c in rows],
@@ -410,21 +410,21 @@ def _execute_tool(name: str, args: dict, db: Session) -> dict:  # noqa: C901
 
     # ── get_candidate_details ──────────────────────────────────────────────
     if name == "get_candidate_details":
-        c = db.query(Candidate).filter(Candidate.id == args["candidate_id"]).first()
+        c = db.query(Candidate).filter(Candidate.id == args["candidate_id"], Candidate.user_id == user_id).first()
         if not c:
             return {"error": f"No candidate with ID {args['candidate_id']}"}
         return _candidate_full(c)
 
     # ── get_candidate_full_report ──────────────────────────────────────────
     if name == "get_candidate_full_report":
-        c = db.query(Candidate).filter(Candidate.id == args["candidate_id"]).first()
+        c = db.query(Candidate).filter(Candidate.id == args["candidate_id"], Candidate.user_id == user_id).first()
         if not c:
             return {"error": f"No candidate with ID {args['candidate_id']}"}
 
         data = _candidate_full(c)
         job_context = ""
         if args.get("job_id"):
-            j = db.query(Job).filter(Job.id == args["job_id"]).first()
+            j = db.query(Job).filter(Job.id == args["job_id"], Job.user_id == user_id).first()
             if j:
                 req = _load(j.required_skills)
                 job_context = (
@@ -467,7 +467,7 @@ Be specific, use the actual data, and write like a human recruiter."""
     # ── compare_candidates ─────────────────────────────────────────────────
     if name == "compare_candidates":
         ids = args.get("candidate_ids", [])
-        candidates = [db.query(Candidate).filter(Candidate.id == cid).first() for cid in ids]
+        candidates = [db.query(Candidate).filter(Candidate.id == cid, Candidate.user_id == user_id).first() for cid in ids]
         candidates = [c for c in candidates if c]
         if not candidates:
             return {"error": "None of the given candidate IDs were found."}
@@ -476,7 +476,7 @@ Be specific, use the actual data, and write like a human recruiter."""
 
         job_context = ""
         if args.get("job_id"):
-            j = db.query(Job).filter(Job.id == args["job_id"]).first()
+            j = db.query(Job).filter(Job.id == args["job_id"], Job.user_id == user_id).first()
             if j:
                 scores = {}
                 for c in candidates:
@@ -515,7 +515,7 @@ Create a structured comparison with:
     if name == "search_candidates_by_skill":
         query_skills = [s.lower() for s in args.get("skills", [])]
         results = []
-        for c in db.query(Candidate).all():
+        for c in db.query(Candidate).filter(Candidate.user_id == user_id).all():
             c_skills = [s.lower() for s in _load(c.skills)]
             matched = [qs for qs in query_skills if any(qs in cs or cs in qs for cs in c_skills)]
             if matched:
@@ -526,7 +526,7 @@ Create a structured comparison with:
 
     # ── get_all_jobs ───────────────────────────────────────────────────────
     if name == "get_all_jobs":
-        rows = db.query(Job).all()
+        rows = db.query(Job).filter(Job.user_id == user_id).all()
         return {
             "total": len(rows),
             "jobs": [
@@ -547,12 +547,12 @@ Create a structured comparison with:
 
     # ── rank_candidates_for_job ────────────────────────────────────────────
     if name == "rank_candidates_for_job":
-        job = db.query(Job).filter(Job.id == args["job_id"]).first()
+        job = db.query(Job).filter(Job.id == args["job_id"], Job.user_id == user_id).first()
         if not job:
             return {"error": f"Job {args['job_id']} not found."}
         top_n = int(args.get("top_n", 5))
         ranked = []
-        for c in db.query(Candidate).all():
+        for c in db.query(Candidate).filter(Candidate.user_id == user_id).all():
             try:
                 r = calculate_match(c, job)
                 ranked.append({
@@ -578,13 +578,13 @@ Create a structured comparison with:
 
     # ── shortlist_top_candidates ───────────────────────────────────────────
     if name == "shortlist_top_candidates":
-        job = db.query(Job).filter(Job.id == args["job_id"]).first()
+        job = db.query(Job).filter(Job.id == args["job_id"], Job.user_id == user_id).first()
         if not job:
             return {"error": f"Job {args['job_id']} not found."}
         top_n = int(args.get("top_n", 5))
         min_score = float(args.get("min_score", 0))
         ranked = []
-        for c in db.query(Candidate).all():
+        for c in db.query(Candidate).filter(Candidate.user_id == user_id).all():
             try:
                 r = calculate_match(c, job)
                 score = r.get("match_score", 0)
@@ -607,7 +607,7 @@ Create a structured comparison with:
 
     # ── get_pipeline_stats ─────────────────────────────────────────────────
     if name == "get_pipeline_stats":
-        rows = db.query(Candidate).all()
+        rows = db.query(Candidate).filter(Candidate.user_id == user_id).all()
         by_status: dict = {}
         total_score = 0
         for c in rows:
@@ -630,7 +630,7 @@ Create a structured comparison with:
         new_status = args.get("new_status", "").strip()
         if new_status not in valid:
             return {"error": f"Invalid status '{new_status}'. Choose from: {sorted(valid)}"}
-        c = db.query(Candidate).filter(Candidate.id == args["candidate_id"]).first()
+        c = db.query(Candidate).filter(Candidate.id == args["candidate_id"], Candidate.user_id == user_id).first()
         if not c:
             return {"error": f"No candidate with ID {args['candidate_id']}"}
         old = c.status
@@ -646,7 +646,7 @@ Create a structured comparison with:
             return {"error": f"Invalid status '{new_status}'."}
         updated = []
         for cid in args.get("candidate_ids", []):
-            c = db.query(Candidate).filter(Candidate.id == cid).first()
+            c = db.query(Candidate).filter(Candidate.id == cid, Candidate.user_id == user_id).first()
             if c:
                 c.status = new_status
                 updated.append(c.name)
@@ -658,11 +658,11 @@ Create a structured comparison with:
             "new_status": new_status,
         }
 
-    # ── bulk_reject_below_score ────────────────────────────────────────────
+    # ── bulk_reject_below_score ────────────────────────────────────
     if name == "bulk_reject_below_score":
         threshold = float(args.get("threshold", 40))
         rejected = []
-        for c in db.query(Candidate).all():
+        for c in db.query(Candidate).filter(Candidate.user_id == user_id).all():
             if (c.ats_score or 0) < threshold and c.status not in ("Hired", "Offer"):
                 c.status = "Rejected"
                 rejected.append({"name": c.name, "id": c.id, "score": c.ats_score})
@@ -675,7 +675,7 @@ Create a structured comparison with:
 
     # ── initiate_ai_interview ──────────────────────────────────────────────
     if name == "initiate_ai_interview":
-        c = db.query(Candidate).filter(Candidate.id == args["candidate_id"]).first()
+        c = db.query(Candidate).filter(Candidate.id == args["candidate_id"], Candidate.user_id == user_id).first()
         if not c:
             return {"error": f"No candidate with ID {args['candidate_id']}"}
         data = _candidate_full(c)
@@ -684,7 +684,7 @@ Create a structured comparison with:
         job_context = ""
         job_skills = []
         if args.get("job_id"):
-            j = db.query(Job).filter(Job.id == args["job_id"]).first()
+            j = db.query(Job).filter(Job.id == args["job_id"], Job.user_id == user_id).first()
             if j:
                 job_skills = _load(j.required_skills)
                 job_context = (
@@ -737,7 +737,7 @@ Return ONLY the JSON array, no other text."""
 
     # ── evaluate_full_interview ────────────────────────────────────────────
     if name == "evaluate_full_interview":
-        c = db.query(Candidate).filter(Candidate.id == args["candidate_id"]).first()
+        c = db.query(Candidate).filter(Candidate.id == args["candidate_id"], Candidate.user_id == user_id).first()
         if not c:
             return {"error": f"No candidate with ID {args['candidate_id']}"}
 
@@ -749,7 +749,7 @@ Return ONLY the JSON array, no other text."""
 
         job_context = ""
         if args.get("job_id"):
-            j = db.query(Job).filter(Job.id == args["job_id"]).first()
+            j = db.query(Job).filter(Job.id == args["job_id"], Job.user_id == user_id).first()
             if j:
                 job_context = f"\nRole: {j.title} | Required: {', '.join(_load(j.required_skills))}"
 
@@ -869,7 +869,7 @@ Rules:
             email = f"{safe_name}.{uuid.uuid4().hex[:6]}@candidate.ats"
 
         # Check for existing candidate with same email
-        existing = db.query(Candidate).filter(Candidate.email == email).first()
+        existing = db.query(Candidate).filter(Candidate.email == email, Candidate.user_id == user_id).first()
         if existing:
             return {
                 "error": f"A candidate with email {email} already exists.",
@@ -907,6 +907,7 @@ Rules:
             languages=json.dumps(parsed.get("languages", [])),
             ats_score=0,
             status="Applied",
+            user_id=user_id,
         )
         db.add(candidate)
         db.commit()
@@ -931,6 +932,10 @@ Rules:
     # ── create_job_posting ─────────────────────────────────────────────────
     if name == "create_job_posting":
         required_skills = args.get("required_skills", [])
+        if not required_skills:
+            from app.services.skill_extractor import extract_skills
+            required_skills = extract_skills(f"{args.get('title', '')} {args.get('description', '')}")
+
         job = Job(
             title=args["title"],
             company=args.get("company"),
@@ -941,6 +946,7 @@ Rules:
             description=args["description"],
             required_skills=json.dumps(required_skills),
             status="Open",
+            user_id=user_id,
         )
         db.add(job)
         db.commit()
@@ -955,7 +961,7 @@ Rules:
 
     # ── delete_candidate ───────────────────────────────────────────────────
     if name == "delete_candidate":
-        c = db.query(Candidate).filter(Candidate.id == args["candidate_id"]).first()
+        c = db.query(Candidate).filter(Candidate.id == args["candidate_id"], Candidate.user_id == user_id).first()
         if not c:
             return {"error": f"No candidate with ID {args['candidate_id']}"}
         name_saved = c.name
@@ -978,8 +984,8 @@ Rules:
 
     # ── get_recruitment_intelligence ───────────────────────────────────────
     if name == "get_recruitment_intelligence":
-        rows = db.query(Candidate).all()
-        jobs = db.query(Job).all()
+        rows = db.query(Candidate).filter(Candidate.user_id == user_id).all()
+        jobs = db.query(Job).filter(Job.user_id == user_id).all()
         by_status: dict = {}
         skill_freq: dict = {}
         total_score = 0
@@ -1073,7 +1079,11 @@ class AgentRequest(BaseModel):
 
 
 @router.post("/")
-async def run_agent(body: AgentRequest, db: Session = Depends(get_db)):
+async def run_agent(
+    body: AgentRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
     if not settings.GEMINI_API_KEY:
         return {
             "reply": "AI Agent is not configured. Add GEMINI_API_KEY to backend/.env.",
@@ -1111,7 +1121,7 @@ async def run_agent(body: AgentRequest, db: Session = Depends(get_db)):
                 tool_args = fc.get("args", {})
                 logger.info("Agent → %s(%s)", tool_name, tool_args)
                 tools_used.append(tool_name)
-                result = _execute_tool(tool_name, tool_args, db)
+                result = _execute_tool(tool_name, tool_args, db, user_id=current_user["user_id"])
                 fn_responses.append({
                     "functionResponse": {
                         "name": tool_name,

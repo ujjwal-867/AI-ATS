@@ -36,12 +36,14 @@ router = APIRouter(
 def create_candidate(
     candidate: CandidateCreate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
 
     existing = (
         db.query(Candidate)
         .filter(
-            Candidate.email == candidate.email
+            Candidate.email == candidate.email,
+            Candidate.user_id == current_user["user_id"],
         )
         .first()
     )
@@ -71,6 +73,7 @@ def create_candidate(
         languages=candidate.languages,
         ats_score=candidate.ats_score,
         status=candidate.status,
+        user_id=current_user["user_id"],
     )
 
     db.add(new_candidate)
@@ -90,10 +93,14 @@ def create_candidate(
 )
 def get_candidates(
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
 
     return (
         db.query(Candidate)
+        .filter(
+            Candidate.user_id == current_user["user_id"]
+        )
         .order_by(
             Candidate.created_at.desc()
         )
@@ -111,12 +118,14 @@ def get_candidates(
 )
 def get_interview_candidates(
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
 
     return (
         db.query(Candidate)
         .filter(
-            Candidate.status == "Interview"
+            Candidate.user_id == current_user["user_id"],
+            Candidate.status == "Interview",
         )
         .order_by(
             Candidate.interview_date.asc()
@@ -135,12 +144,14 @@ def get_interview_candidates(
 )
 def get_completed_interviews(
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
 
     return (
         db.query(Candidate)
         .filter(
-            Candidate.interview_result.isnot(None)
+            Candidate.user_id == current_user["user_id"],
+            Candidate.interview_result.isnot(None),
         )
         .order_by(
             Candidate.interview_completed_at.desc()
@@ -160,12 +171,14 @@ def get_completed_interviews(
 def get_candidate(
     candidate_id: str,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
 
     candidate = (
         db.query(Candidate)
         .filter(
-            Candidate.id == candidate_id
+            Candidate.id == candidate_id,
+            Candidate.user_id == current_user["user_id"],
         )
         .first()
     )
@@ -188,10 +201,14 @@ def update_candidate(
     candidate_id: str,
     candidate_data: CandidateUpdate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
     candidate = (
         db.query(Candidate)
-        .filter(Candidate.id == candidate_id)
+        .filter(
+            Candidate.id == candidate_id,
+            Candidate.user_id == current_user["user_id"],
+        )
         .first()
     )
 
@@ -260,12 +277,14 @@ def update_candidate(
 def delete_candidate(
     candidate_id: str,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
 
     candidate = (
         db.query(Candidate)
         .filter(
-            Candidate.id == candidate_id
+            Candidate.id == candidate_id,
+            Candidate.user_id == current_user["user_id"],
         )
         .first()
     )
@@ -302,12 +321,14 @@ def schedule_interview(
     candidate_id: str,
     interview: InterviewScheduleRequest,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
 
     candidate = (
         db.query(Candidate)
         .filter(
-            Candidate.id == candidate_id
+            Candidate.id == candidate_id,
+            Candidate.user_id == current_user["user_id"],
         )
         .first()
     )
@@ -389,12 +410,14 @@ def complete_interview(
     candidate_id: str,
     interview: InterviewResultRequest,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
 
     candidate = (
         db.query(Candidate)
         .filter(
-            Candidate.id == candidate_id
+            Candidate.id == candidate_id,
+            Candidate.user_id == current_user["user_id"],
         )
         .first()
     )

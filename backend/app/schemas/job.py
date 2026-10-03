@@ -1,5 +1,4 @@
-from typing import Optional
-
+from typing import Optional, Union, List
 from pydantic import BaseModel
 
 
@@ -11,6 +10,8 @@ class JobCreate(BaseModel):
     experience: Optional[str] = None
     salary: Optional[str] = None
     description: str
+    skills: Optional[Union[List[str], str]] = None
+    required_skills: Optional[Union[List[str], str]] = None
 
 
 class JobUpdate(BaseModel):
@@ -22,19 +23,22 @@ class JobUpdate(BaseModel):
     salary: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None
+    skills: Optional[Union[List[str], str]] = None
+    required_skills: Optional[Union[List[str], str]] = None
 
 
 class JobResponse(BaseModel):
     id: str
+    user_id: Optional[str] = None
     title: str
-    company: Optional[str]
-    location: Optional[str]
-    employment_type: Optional[str]
-    experience: Optional[str]
-    salary: Optional[str]
+    company: Optional[str] = None
+    location: Optional[str] = None
+    employment_type: Optional[str] = None
+    experience: Optional[str] = None
+    salary: Optional[str] = None
     description: str
-    required_skills: Optional[str]
+    required_skills: Optional[str] = None
     status: str
 
     class Config:
-        from_attributes = True 
+        from_attributes = True

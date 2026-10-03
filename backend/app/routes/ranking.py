@@ -24,11 +24,15 @@ router = APIRouter(
 def rank_candidates(
     job_id: str,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
 
     job = (
         db.query(Job)
-        .filter(Job.id == job_id)
+        .filter(
+            Job.id == job_id,
+            Job.user_id == current_user["user_id"],
+        )
         .first()
     )
 
@@ -41,6 +45,9 @@ def rank_candidates(
 
     candidates = (
         db.query(Candidate)
+        .filter(
+            Candidate.user_id == current_user["user_id"]
+        )
         .all()
     )
 

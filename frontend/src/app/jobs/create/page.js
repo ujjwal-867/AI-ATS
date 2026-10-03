@@ -73,12 +73,12 @@ company:form.company,
 
 description:form.description,
 
-skills:
-form.skills
-.split(",")
-.map(
-skill=>skill.trim()
-)
+      skills: form.skills
+        ? form.skills
+            .split(",")
+            .map((skill) => skill.trim())
+            .filter(Boolean)
+        : [],
 
 });
 

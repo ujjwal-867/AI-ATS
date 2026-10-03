@@ -13,8 +13,10 @@ router = APIRouter(
 )
 
 
+from typing import Union
+
 class UpdateStatusRequest(BaseModel):
-    candidate_id: int
+    candidate_id: Union[str, int]
     status: str
 
 
@@ -30,8 +32,15 @@ VALID_STATUS = [
 
 
 @router.get("/")
-def get_pipeline(db: Session = Depends(get_db)):
-    candidates = db.query(Candidate).all()
+def get_pipeline(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    candidates = (
+        db.query(Candidate)
+        .filter(Candidate.user_id == current_user["user_id"])
+        .all()
+    )
 
     return [
         {
@@ -49,6 +58,7 @@ def get_pipeline(db: Session = Depends(get_db)):
 def update_status(
     data: UpdateStatusRequest,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
     if data.status not in VALID_STATUS:
         raise HTTPException(
@@ -58,7 +68,10 @@ def update_status(
 
     candidate = (
         db.query(Candidate)
-        .filter(Candidate.id == data.candidate_id)
+        .filter(
+            Candidate.id == str(data.candidate_id),
+            Candidate.user_id == current_user["user_id"],
+        )
         .first()
     )
 

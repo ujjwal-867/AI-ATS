@@ -14,6 +14,12 @@ class Job(Base):
         default=lambda: str(uuid.uuid4()),
     )
 
+    user_id = Column(
+        String,
+        index=True,
+        nullable=True,
+    )
+
     title = Column(String, nullable=False)
 
     company = Column(String)

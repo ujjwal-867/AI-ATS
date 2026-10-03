@@ -120,6 +120,8 @@ class CandidateResponse(BaseModel):
 
     interview_completed_at: Optional[Any] = None
 
+    user_id: Optional[str] = None
+
     model_config = ConfigDict(
         from_attributes=True
     )

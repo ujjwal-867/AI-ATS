@@ -57,7 +57,9 @@ def format_time(value):
 @router.get("/")
 def activity(
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
+    uid = current_user["user_id"]
     activities = []
 
     # =========================================================
@@ -66,6 +68,7 @@ def activity(
 
     candidates = (
         db.query(Candidate)
+        .filter(Candidate.user_id == uid)
         .order_by(
             Candidate.created_at.desc()
         )
@@ -167,6 +170,7 @@ def activity(
 
     jobs = (
         db.query(Job)
+        .filter(Job.user_id == uid)
         .order_by(
             Job.created_at.desc()
         )

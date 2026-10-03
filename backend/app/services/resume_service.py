@@ -18,6 +18,7 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 async def upload_resume(
     file: UploadFile,
     db: Session,
+    user_id: str = None,
 ):
     allowed = {
         ".pdf",
@@ -71,16 +72,17 @@ async def upload_resume(
     experience = parsed.get("experience", {})
     education = parsed.get("education", {})
 
-    existing = (
-        db.query(Candidate)
-        .filter(Candidate.email == parsed["email"])
-        .first()
-    )
+    existing_query = db.query(Candidate).filter(Candidate.email == parsed["email"])
+    if user_id:
+        existing_query = existing_query.filter(Candidate.user_id == user_id)
+    existing = existing_query.first()
 
     # ----------------------------
     # UPDATE EXISTING CANDIDATE
     # ----------------------------
     if existing:
+        if user_id and not existing.user_id:
+            existing.user_id = user_id
         # Clean up old resume file
         if existing.resume_url and existing.resume_url != final_resume_url:
             delete_file(existing.resume_url)
@@ -153,6 +155,7 @@ async def upload_resume(
     # ----------------------------
 
     candidate = Candidate(
+        user_id=user_id,
         name=parsed.get("name") or "Unknown",
         email=parsed["email"],
         phone=parsed.get("phone"),

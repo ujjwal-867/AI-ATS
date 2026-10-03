@@ -21,10 +21,14 @@ router = APIRouter(
 @router.get("/")
 def dashboard_stats(
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
+    uid = current_user["user_id"]
+
     # Candidates
     total_candidates = (
         db.query(Candidate)
+        .filter(Candidate.user_id == uid)
         .count()
     )
 
@@ -32,13 +36,15 @@ def dashboard_stats(
     active_jobs = (
         db.query(Job)
         .filter(
-            Job.status == "Open"
+            Job.user_id == uid,
+            Job.status == "Open",
         )
         .count()
     )
 
     total_jobs = (
         db.query(Job)
+        .filter(Job.user_id == uid)
         .count()
     )
 
@@ -46,7 +52,8 @@ def dashboard_stats(
     interviews = (
         db.query(Candidate)
         .filter(
-            Candidate.status == "Interview"
+            Candidate.user_id == uid,
+            Candidate.status == "Interview",
         )
         .count()
     )
@@ -54,7 +61,8 @@ def dashboard_stats(
     applied = (
         db.query(Candidate)
         .filter(
-            Candidate.status == "Applied"
+            Candidate.user_id == uid,
+            Candidate.status == "Applied",
         )
         .count()
     )
@@ -62,32 +70,43 @@ def dashboard_stats(
     screening = (
         db.query(Candidate)
         .filter(
-            Candidate.status == "Screening"
+            Candidate.user_id == uid,
+            Candidate.status == "Screening",
         )
         .count()
     )
 
     offer = (
         db.query(Candidate)
-        .filter(Candidate.status == "Offer")
+        .filter(
+            Candidate.user_id == uid,
+            Candidate.status == "Offer",
+        )
         .count()
     )
 
     hired = (
         db.query(Candidate)
-        .filter(Candidate.status == "Hired")
+        .filter(
+            Candidate.user_id == uid,
+            Candidate.status == "Hired",
+        )
         .count()
     )
 
     rejected = (
         db.query(Candidate)
-        .filter(Candidate.status == "Rejected")
+        .filter(
+            Candidate.user_id == uid,
+            Candidate.status == "Rejected",
+        )
         .count()
     )
 
     # ATS
     average_ats = (
         db.query(func.avg(Candidate.ats_score))
+        .filter(Candidate.user_id == uid)
         .scalar()
     )
 

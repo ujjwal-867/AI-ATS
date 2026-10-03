@@ -32,11 +32,14 @@ def notification_time(value):
 @router.get("/")
 def get_notifications(
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
+    uid = current_user["user_id"]
     notifications = []
 
     candidates = (
         db.query(Candidate)
+        .filter(Candidate.user_id == uid)
         .order_by(Candidate.updated_at.desc())
         .limit(20)
         .all()
@@ -99,6 +102,7 @@ def get_notifications(
 
     jobs = (
         db.query(Job)
+        .filter(Job.user_id == uid)
         .order_by(Job.updated_at.desc())
         .limit(10)
         .all()

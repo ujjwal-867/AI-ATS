@@ -25,11 +25,15 @@ def match_candidate(
     candidate_id: str,
     job_id: str,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
 
     candidate = (
         db.query(Candidate)
-        .filter(Candidate.id == candidate_id)
+        .filter(
+            Candidate.id == candidate_id,
+            Candidate.user_id == current_user["user_id"],
+        )
         .first()
     )
 
@@ -41,7 +45,10 @@ def match_candidate(
 
     job = (
         db.query(Job)
-        .filter(Job.id == job_id)
+        .filter(
+            Job.id == job_id,
+            Job.user_id == current_user["user_id"],
+        )
         .first()
     )
 
@@ -220,10 +227,13 @@ def match_candidate(
 @router.get("/")
 def get_matches(
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
 
     matches = (
         db.query(Match)
+        .join(Candidate, Match.candidate_id == Candidate.id)
+        .filter(Candidate.user_id == current_user["user_id"])
         .order_by(
             Match.created_at.desc()
         )
@@ -241,12 +251,15 @@ def get_matches(
 def get_match(
     match_id: str,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
 
     match = (
         db.query(Match)
+        .join(Candidate, Match.candidate_id == Candidate.id)
         .filter(
-            Match.id == match_id
+            Match.id == match_id,
+            Candidate.user_id == current_user["user_id"],
         )
         .first()
     )

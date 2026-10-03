@@ -156,6 +156,20 @@ def skill_matches(required_skill, candidate_skills):
     return False
 
 
+def get_job_required_skills(job):
+    """
+    Get required skills for a job.
+    If job.required_skills is empty or not set, dynamically extract skills
+    from job.description + job.title so matching never results in 0 skills.
+    """
+    skills = extract_skills(getattr(job, "required_skills", None))
+    if not skills:
+        from app.services.ats_score import extract_skills as extract_from_text
+        combined = f"{getattr(job, 'title', '') or ''} {getattr(job, 'description', '') or ''}"
+        skills = extract_from_text(combined)
+    return skills
+
+
 # ============================================================
 # EXPERIENCE
 # ============================================================
@@ -567,9 +581,7 @@ def calculate_project_score(candidate, job):
         f"{job.title or ''} {job.description or ''}"
     )
 
-    required_skills = extract_skills(
-        job.required_skills
-    )
+    required_skills = get_job_required_skills(job)
 
     relevant_projects = []
 
@@ -917,9 +929,7 @@ def calculate_match(candidate, job):
         candidate.skills
     )
 
-    required_skills = extract_skills(
-        job.required_skills
-    )
+    required_skills = get_job_required_skills(job)
 
     matched_skills = []
     missing_skills = []
