@@ -276,12 +276,10 @@ def delete_candidate(
             detail="Candidate not found",
         )
 
-    # Delete resume file if it exists
+    # Delete resume file if it exists (local or cloud)
     if candidate.resume_url:
-        from pathlib import Path
-        resume_file = Path(candidate.resume_url)
-        if resume_file.exists():
-            resume_file.unlink()
+        from app.services.storage_service import delete_file
+        delete_file(candidate.resume_url)
 
     db.delete(candidate)
     db.commit()

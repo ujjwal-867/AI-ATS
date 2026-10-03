@@ -960,13 +960,11 @@ Rules:
             return {"error": f"No candidate with ID {args['candidate_id']}"}
         name_saved = c.name
         cid_saved = c.id
-        # Delete resume file if present
+        # Delete resume file if present (local or cloud)
         if c.resume_url:
             try:
-                from pathlib import Path
-                p = Path(c.resume_url)
-                if p.exists():
-                    p.unlink()
+                from app.services.storage_service import delete_file
+                delete_file(c.resume_url)
             except Exception:
                 pass
         db.delete(c)

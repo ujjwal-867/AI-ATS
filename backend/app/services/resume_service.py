@@ -49,10 +49,24 @@ async def upload_resume(
     parsed = parse_resume(str(filepath))
 
     if not parsed.get("email"):
+        # Clean up temporary file on failure
+        filepath.unlink(missing_ok=True)
         raise HTTPException(
             status_code=400,
             detail="Unable to extract email from resume.",
         )
+
+    # Save to persistent storage (Supabase Storage in cloud, or local disk)
+    from app.services.storage_service import save_file, delete_file, is_cloud_storage_enabled
+    content_type = "application/pdf" if extension == ".pdf" else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    final_resume_url = save_file(content, filename, content_type)
+
+    # Clean up local temporary file if cloud storage is active
+    if is_cloud_storage_enabled():
+        try:
+            filepath.unlink(missing_ok=True)
+        except Exception:
+            pass
 
     experience = parsed.get("experience", {})
     education = parsed.get("education", {})
@@ -67,11 +81,9 @@ async def upload_resume(
     # UPDATE EXISTING CANDIDATE
     # ----------------------------
     if existing:
-        # Clean up old resume file if different
-        if existing.resume_url and existing.resume_url != str(filepath):
-            old_file = Path(existing.resume_url)
-            if old_file.exists():
-                old_file.unlink()
+        # Clean up old resume file
+        if existing.resume_url and existing.resume_url != final_resume_url:
+            delete_file(existing.resume_url)
 
         existing.name = parsed.get("name") or existing.name
         existing.phone = parsed.get("phone")
@@ -79,7 +91,7 @@ async def upload_resume(
         existing.github = parsed.get("github")
         existing.location = parsed.get("location")
 
-        existing.resume_url = str(filepath)
+        existing.resume_url = final_resume_url
         existing.resume_text = parsed.get("resume_text")
 
         existing.skills = json.dumps(
@@ -148,7 +160,7 @@ async def upload_resume(
         github=parsed.get("github"),
         location=parsed.get("location"),
         summary=None,
-        resume_url=str(filepath),
+        resume_url=final_resume_url,
         resume_text=parsed.get("resume_text"),
         skills=json.dumps(parsed.get("skills", [])),
         experience=json.dumps(experience),

@@ -16,8 +16,14 @@ class Settings(BaseSettings):
 
     UPLOAD_DIR: str = "uploads"
 
+    # Cloud Storage (Optional - e.g. Supabase Storage for persistent resume hosting)
+    SUPABASE_URL: str = ""
+    SUPABASE_KEY: str = ""
+    SUPABASE_BUCKET: str = "resumes"
+
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
+        "http://127.0.0.1:3000",
     ]
 
     model_config = SettingsConfigDict(

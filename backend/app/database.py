@@ -5,9 +5,14 @@ from sqlalchemy.orm import sessionmaker
 from app.config import settings
 
 
+database_url = settings.DATABASE_URL
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
 engine = create_engine(
-    settings.DATABASE_URL,
+    database_url,
     pool_pre_ping=True,
+    pool_recycle=300,
     echo=settings.DEBUG,
 )
 
