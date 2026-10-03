@@ -1,54 +1,135 @@
 import re
 
 COMMON_SKILLS = [
+    # Languages
     "python",
     "java",
     "javascript",
     "typescript",
+    "c++",
+    "c#",
+    "c",
+    "go",
+    "golang",
+    "rust",
+    "ruby",
+    "php",
+    "swift",
+    "kotlin",
+    "dart",
+    "sql",
+    "r",
+    "bash",
+    "shell",
+
+    # Frontend
     "react",
     "next.js",
+    "nextjs",
+    "vue",
+    "angular",
+    "svelte",
+    "html",
+    "css",
+    "tailwind",
+    "tailwind css",
+    "bootstrap",
+    "redux",
+    "webpack",
+    "vite",
+
+    # Backend
     "node.js",
+    "nodejs",
     "express",
     "fastapi",
     "django",
     "flask",
-    "html",
-    "css",
-    "tailwind",
-    "bootstrap",
-    "sql",
+    "spring boot",
+    "nestjs",
+    "rest api",
+    "restful api",
+    "graphql",
+    "grpc",
+    "microservices",
+    "websockets",
+
+    # Databases
     "postgresql",
+    "postgres",
     "mysql",
     "mongodb",
     "redis",
-    "docker",
-    "kubernetes",
-    "git",
-    "github",
+    "sqlite",
+    "supabase",
+    "firebase",
+    "dynamodb",
+    "elasticsearch",
+
+    # Cloud & DevOps
     "aws",
     "azure",
     "gcp",
+    "docker",
+    "kubernetes",
+    "terraform",
+    "ci/cd",
+    "jenkins",
+    "linux",
+    "nginx",
+    "git",
+    "github",
+
+    # AI & Data
     "machine learning",
     "deep learning",
     "tensorflow",
     "pytorch",
     "numpy",
     "pandas",
-    "opencv",
     "scikit-learn",
+    "opencv",
+    "nlp",
     "power bi",
+    "tableau",
     "excel",
+    "data analysis",
+
+    # Mobile & Other
+    "react native",
+    "flutter",
+    "android",
+    "ios",
+    "agile",
+    "scrum",
+    "jira",
+    "figma",
+    "system design",
 ]
 
 
 def extract_skills(text: str):
     text = (text or "").lower()
-
     found = []
 
     for skill in COMMON_SKILLS:
-        if re.search(r"\b" + re.escape(skill) + r"\b", text):
-            found.append(skill)
+        pattern = r"(?:^|[^a-zA-Z0-9+#])" + re.escape(skill) + r"(?:$|[^a-zA-Z0-9+#])"
+        if re.search(pattern, text):
+            # Normalize common variants
+            val = skill
+            if val in ("nextjs", "next.js"):
+                val = "next.js"
+            elif val in ("nodejs", "node.js"):
+                val = "node.js"
+            elif val in ("postgres", "postgresql"):
+                val = "postgresql"
+            elif val in ("golang", "go"):
+                val = "go"
+            elif val in ("restful api", "rest api"):
+                val = "rest api"
+            elif val in ("tailwind css", "tailwind"):
+                val = "tailwind css"
+            found.append(val)
 
     return sorted(set(found))
 

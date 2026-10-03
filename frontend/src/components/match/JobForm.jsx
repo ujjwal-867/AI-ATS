@@ -1,7 +1,7 @@
 "use client";
 
 import JDInput from "./JDInput";
-
+import extractJDskills from "@/lib/extractJDskills";
 import { createJob } from "@/services/api";
 
 
@@ -24,22 +24,17 @@ export default function JobForm({
 
     try{
 
+      const extractedSkills = extractJDskills(`${jobTitle} ${jobDescription}`);
+
       const job = await createJob({
-
         title: jobTitle,
-
         company,
-
         location:"Remote",
-
         employment_type:"Full Time",
-
         experience,
-
         salary:"",
-
         description:jobDescription,
-
+        skills: extractedSkills,
       });
 
 
