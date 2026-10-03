@@ -26,11 +26,16 @@ export async function login(credentials) {
       );
     }
 
+    const isSecure =
+      typeof window !== "undefined" &&
+      window.location.protocol === "https:";
+
     document.cookie =
       `token=${response.access_token}; ` +
       `path=/; ` +
       `max-age=86400; ` +
-      `SameSite=Lax`;
+      `SameSite=Lax` +
+      (isSecure ? "; Secure" : "");
   }
 
   return response;
