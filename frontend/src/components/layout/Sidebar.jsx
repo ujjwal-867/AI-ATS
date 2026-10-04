@@ -17,9 +17,10 @@ import {
   ChevronRight,
   Database,
   GitBranch,
+  LogOut,
 } from "lucide-react";
 
-import { getCurrentUser } from "@/services/auth.service";
+import { getCurrentUser, logout } from "@/services/auth.service";
 
 const menuItems = [
   {
@@ -237,29 +238,43 @@ export default function Sidebar() {
         <div
           className={`flex items-center ${
             collapsed
-              ? "justify-center"
-              : "gap-3"
+              ? "flex-col gap-2 justify-center"
+              : "justify-between gap-3"
           }`}
         >
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
-            {user?.name
-              ? user.name
-                  .charAt(0)
-                  .toUpperCase()
-              : "U"}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+              {user?.name
+                ? user.name
+                    .charAt(0)
+                    .toUpperCase()
+                : "U"}
+            </div>
+
+            {!collapsed && (
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-800">
+                  {user?.name || "User"}
+                </p>
+
+                <p className="truncate text-xs text-slate-500">
+                  {user?.email || ""}
+                </p>
+              </div>
+            )}
           </div>
 
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-800">
-                {user?.name || "User"}
-              </p>
-
-              <p className="truncate text-xs text-slate-500">
-                {user?.email || ""}
-              </p>
-            </div>
-          )}
+          <button
+            type="button"
+            title="Sign out"
+            onClick={() => {
+              logout();
+              window.location.href = "/login";
+            }}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+          >
+            <LogOut size={17} />
+          </button>
         </div>
       </div>
     </motion.aside>
