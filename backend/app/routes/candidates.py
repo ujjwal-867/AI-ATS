@@ -28,6 +28,20 @@ router = APIRouter(
 # =========================================================
 # CREATE CANDIDATE
 # =========================================================
+# VERIFY EMAIL
+# =========================================================
+
+@router.get("/verify-email")
+def verify_candidate_email(
+    email: str,
+):
+    from app.services.email_validator import validate_email_address
+    return validate_email_address(email, check_dns=True)
+
+
+# =========================================================
+# CREATE CANDIDATE
+# =========================================================
 
 @router.post(
     "/",
@@ -38,11 +52,21 @@ def create_candidate(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
+    from app.services.email_validator import validate_email_address
+
+    email_check = validate_email_address(candidate.email, check_dns=False)
+    if not email_check["valid"]:
+        raise HTTPException(
+            status_code=400,
+            detail=email_check.get("reason") or "Invalid email address format.",
+        )
+
+    clean_email = email_check.get("suggestion") or email_check["email"]
 
     existing = (
         db.query(Candidate)
         .filter(
-            Candidate.email == candidate.email,
+            Candidate.email == clean_email,
             Candidate.user_id == current_user["user_id"],
         )
         .first()
@@ -51,12 +75,12 @@ def create_candidate(
     if existing:
         raise HTTPException(
             status_code=400,
-            detail="Candidate already exists",
+            detail="Candidate with this email already exists",
         )
 
     new_candidate = Candidate(
         name=candidate.name,
-        email=candidate.email,
+        email=clean_email,
         phone=candidate.phone,
         linkedin=candidate.linkedin,
         github=candidate.github,
@@ -221,6 +245,36 @@ def update_candidate(
     update_data = candidate_data.model_dump(
         exclude_unset=True
     )
+
+    # --------------------------------------------------
+    # Validate and normalize email if provided
+    # --------------------------------------------------
+    if "email" in update_data and update_data["email"]:
+        from app.services.email_validator import validate_email_address
+        email_check = validate_email_address(update_data["email"], check_dns=False)
+        if not email_check["valid"]:
+            raise HTTPException(
+                status_code=400,
+                detail=email_check.get("reason") or "Invalid email address format.",
+            )
+        clean_email = email_check.get("suggestion") or email_check["email"]
+
+        if clean_email != candidate.email:
+            existing = (
+                db.query(Candidate)
+                .filter(
+                    Candidate.email == clean_email,
+                    Candidate.user_id == current_user["user_id"],
+                    Candidate.id != candidate.id,
+                )
+                .first()
+            )
+            if existing:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Another candidate with this email already exists",
+                )
+        update_data["email"] = clean_email
 
     # --------------------------------------------------
     # If candidate is moved back before the interview

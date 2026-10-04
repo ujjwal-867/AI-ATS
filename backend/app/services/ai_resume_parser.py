@@ -77,9 +77,18 @@ def enhance_parsed_resume(traditional_parsed: dict, ai_parsed: dict) -> dict:
 
     merged = traditional_parsed.copy()
 
-    for field in ["name", "email", "phone", "location", "linkedin", "github"]:
+    from app.services.email_validator import validate_email_address, sanitize_email
+
+    for field in ["name", "phone", "location", "linkedin", "github"]:
         if ai_parsed.get(field):
             merged[field] = ai_parsed[field]
+
+    # Validate AI email before taking precedence over traditional parsed email
+    ai_email = sanitize_email(ai_parsed.get("email"))
+    if ai_email:
+        res = validate_email_address(ai_email, check_dns=False)
+        if res["valid"]:
+            merged["email"] = res.get("suggestion") or res["email"]
 
     # Merge skills — combine both, deduplicate
     ai_skills = ai_parsed.get("skills", [])

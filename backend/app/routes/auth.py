@@ -29,9 +29,20 @@ def register(
     user: UserRegister,
     db: Session = Depends(get_db),
 ):
+    from app.services.email_validator import validate_email_address
+
+    email_check = validate_email_address(user.email, check_dns=False)
+    if not email_check["valid"]:
+        raise HTTPException(
+            status_code=400,
+            detail=email_check.get("reason") or "Invalid email address format.",
+        )
+
+    clean_email = email_check.get("suggestion") or email_check["email"]
+
     existing_user = (
         db.query(User)
-        .filter(User.email == user.email)
+        .filter(User.email == clean_email)
         .first()
     )
 
@@ -42,8 +53,8 @@ def register(
         )
 
     new_user = User(
-        name=user.name,
-        email=user.email,
+        name=user.name.strip(),
+        email=clean_email,
         password_hash=hash_password(user.password),
     )
 
@@ -63,9 +74,10 @@ def login(
     user: UserLogin,
     db: Session = Depends(get_db),
 ):
+    normalized_email = user.email.strip().lower()
     existing_user = (
         db.query(User)
-        .filter(User.email == user.email)
+        .filter(User.email == normalized_email)
         .first()
     )
 

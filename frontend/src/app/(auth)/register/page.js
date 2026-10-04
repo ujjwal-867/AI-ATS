@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { register as registerUser } from "@/services/auth.service";
+import { validateEmail } from "@/lib/emailValidator";
 
 import {
   Card,
@@ -31,13 +32,39 @@ export default function RegisterPage() {
     password: "",
   });
 
+  const emailValidation = useMemo(() => {
+    if (!formData.email || !formData.email.trim()) return null;
+    return validateEmail(formData.email);
+  }, [formData.email]);
+
+  function applyEmailSuggestion() {
+    if (emailValidation?.suggestion) {
+      setFormData((prev) => ({
+        ...prev,
+        email: emailValidation.suggestion,
+      }));
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (emailValidation && !emailValidation.isValid) {
+      toast.error(emailValidation.reason || "Please provide a valid email.");
+      return;
+    }
 
     try {
       setLoading(true);
 
-      await registerUser(formData);
+      const normalizedEmail = (
+        emailValidation?.email || formData.email
+      ).trim().toLowerCase();
+
+      await registerUser({
+        ...formData,
+        email: normalizedEmail,
+      });
 
       toast.success("Account created successfully!");
 
@@ -104,6 +131,28 @@ export default function RegisterPage() {
                   })
                 }
               />
+
+              {emailValidation && !emailValidation.isValid && (
+                <p className="flex items-center gap-1.5 text-xs text-rose-300 font-medium">
+                  <AlertCircle size={14} className="shrink-0" />
+                  {emailValidation.reason}
+                </p>
+              )}
+
+              {emailValidation?.suggestion && (
+                <div className="flex items-center justify-between rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-1.5 text-xs text-amber-200">
+                  <span>
+                    Did you mean <strong>{emailValidation.suggestion}</strong>?
+                  </span>
+                  <button
+                    type="button"
+                    onClick={applyEmailSuggestion}
+                    className="ml-2 font-bold text-amber-400 underline hover:text-amber-300"
+                  >
+                    Apply
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

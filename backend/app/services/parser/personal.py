@@ -56,12 +56,21 @@ def extract_name(text: str):
 
 
 def extract_email(text: str):
-    match = re.search(
+    from app.services.email_validator import validate_email_address, sanitize_email
+
+    matches = re.findall(
         EMAIL_PATTERN,
         text,
     )
 
-    return match.group(0) if match else None
+    for match in matches:
+        cleaned = sanitize_email(match)
+        res = validate_email_address(cleaned, check_dns=False)
+        if res["valid"]:
+            # If there's an obvious domain typo (e.g. gnail.com -> gmail.com), apply suggestion
+            return res.get("suggestion") or res["email"]
+
+    return None
 
 
 def extract_phone(text: str):

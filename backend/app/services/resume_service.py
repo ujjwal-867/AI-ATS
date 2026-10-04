@@ -49,13 +49,20 @@ async def upload_resume(
 
     parsed = parse_resume(str(filepath))
 
-    if not parsed.get("email"):
+    from app.services.email_validator import validate_email_address
+
+    email_val = validate_email_address(parsed.get("email"), check_dns=False)
+    if not email_val["valid"]:
         # Clean up temporary file on failure
         filepath.unlink(missing_ok=True)
+        reason = email_val.get("reason") or "Unable to extract a valid email from resume."
         raise HTTPException(
             status_code=400,
-            detail="Unable to extract email from resume.",
+            detail=f"Invalid candidate email: {reason}",
         )
+
+    # Use validated and normalized email
+    parsed["email"] = email_val.get("suggestion") or email_val["email"]
 
     # Save to persistent storage (Supabase Storage in cloud, or local disk)
     from app.services.storage_service import save_file, delete_file, is_cloud_storage_enabled

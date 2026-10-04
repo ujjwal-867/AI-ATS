@@ -24,11 +24,13 @@ import {
   ExternalLink,
   Save,
   Clock,
+  AlertCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AppLayout from "@/components/layout/AppLayout";
+import { validateEmail } from "@/lib/emailValidator";
 
 import {
   getCandidates,
@@ -1506,6 +1508,11 @@ function EditCandidateModal({
     ),
   });
 
+  const emailValidation = useMemo(() => {
+    if (!form.email || !form.email.trim()) return null;
+    return validateEmail(form.email);
+  }, [form.email]);
+
   function updateField(field, value) {
     setForm((current) => ({
       ...current,
@@ -1513,11 +1520,22 @@ function EditCandidateModal({
     }));
   }
 
+  function applyEmailSuggestion() {
+    if (emailValidation?.suggestion) {
+      updateField("email", emailValidation.suggestion);
+    }
+  }
+
   function submit(event) {
     event.preventDefault();
 
+    if (emailValidation && !emailValidation.isValid) {
+      return;
+    }
+
     onSubmit({
       ...form,
+      email: (emailValidation?.email || form.email).trim().toLowerCase(),
       ats_score: Number(form.ats_score),
     });
   }
@@ -1542,15 +1560,37 @@ function EditCandidateModal({
             required
           />
 
-          <FormField
-            label="Email"
-            type="email"
-            value={form.email}
-            onChange={(value) =>
-              updateField("email", value)
-            }
-            required
-          />
+          <div>
+            <FormField
+              label="Email"
+              type="email"
+              value={form.email}
+              onChange={(value) =>
+                updateField("email", value)
+              }
+              required
+            />
+            {emailValidation && !emailValidation.isValid && (
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs text-rose-500 font-medium">
+                <AlertCircle size={14} className="shrink-0" />
+                {emailValidation.reason}
+              </p>
+            )}
+            {emailValidation?.suggestion && (
+              <div className="mt-2 flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-800">
+                <span>
+                  Did you mean <strong>{emailValidation.suggestion}</strong>?
+                </span>
+                <button
+                  type="button"
+                  onClick={applyEmailSuggestion}
+                  className="ml-2 font-semibold text-blue-600 hover:underline"
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+          </div>
 
           <FormField
             label="Phone"

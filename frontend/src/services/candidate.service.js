@@ -72,3 +72,14 @@ export async function completeInterview(id, data) {
     }
   );
 }
+
+
+// =========================================================
+// EMAIL VERIFICATION
+// =========================================================
+
+export async function verifyCandidateEmail(email) {
+  return request(
+    `/api/candidates/verify-email?email=${encodeURIComponent(email)}`
+  );
+}
