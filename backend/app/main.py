@@ -8,7 +8,8 @@ from app.database import Base, engine
 from app.config import settings
 
 # Import models
-from app.models import job
+from sqlalchemy import text
+from app.models import job, login_log, user
 
 # Import routes
 from app.routes import (
@@ -29,6 +30,16 @@ from app.routes import (
 
 # Create tables
 Base.metadata.create_all(bind=engine)
+
+# Auto-migrate columns if missing
+try:
+    with engine.connect() as conn:
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP WITH TIME ZONE;"))
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS login_count INTEGER DEFAULT 0;"))
+        conn.commit()
+except Exception as e:
+    print(f"Schema migration note: {e}")
+
 
 
 app = FastAPI(

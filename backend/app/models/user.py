@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, String, DateTime
+from sqlalchemy import Column, String, DateTime, Integer
 from sqlalchemy.sql import func
 
 from app.database import Base
@@ -29,6 +29,17 @@ class User(Base):
 
     password_hash = Column(
         String,
+        nullable=False,
+    )
+
+    last_login_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    login_count = Column(
+        Integer,
+        default=0,
         nullable=False,
     )
 

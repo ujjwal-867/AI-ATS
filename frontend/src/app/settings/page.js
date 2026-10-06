@@ -12,12 +12,26 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
+  Activity,
+  Laptop,
+  Smartphone,
+  Globe,
+  Clock,
+  Users,
+  RefreshCw,
+  AlertCircle,
+  XCircle,
+  Monitor,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import AppLayout from "@/components/layout/AppLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import { getCurrentUser } from "@/services/auth.service";
+import {
+  getCurrentUser,
+  getLoginHistory,
+  getUsersActivity,
+} from "@/services/auth.service";
 
 const defaultSettings = {
   fullName: "",
@@ -49,6 +63,32 @@ export default function SettingsPage() {
   const [showConfirmPassword, setShowConfirmPassword] =
     useState(false);
   const [saving, setSaving] = useState(false);
+
+  const [loginHistory, setLoginHistory] = useState([]);
+  const [usersActivity, setUsersActivity] = useState([]);
+  const [loadingActivity, setLoadingActivity] = useState(false);
+
+  async function loadActivityData() {
+    try {
+      setLoadingActivity(true);
+      const [history, users] = await Promise.all([
+        getLoginHistory().catch(() => []),
+        getUsersActivity().catch(() => []),
+      ]);
+      setLoginHistory(Array.isArray(history) ? history : []);
+      setUsersActivity(Array.isArray(users) ? users : []);
+    } catch (err) {
+      console.error("Unable to load login activity:", err);
+    } finally {
+      setLoadingActivity(false);
+    }
+  }
+
+  useEffect(() => {
+    if (activeSection === "security" || activeSection === "sessions") {
+      loadActivityData();
+    }
+  }, [activeSection]);
 
   useEffect(() => {
     const user = getCurrentUser();
@@ -177,6 +217,12 @@ export default function SettingsPage() {
       label: "Security",
       description: "Password and account security",
       icon: Shield,
+    },
+    {
+      id: "sessions",
+      label: "Login Activity",
+      description: "Login history & active sessions",
+      icon: Activity,
     },
     {
       id: "notifications",
@@ -473,11 +519,290 @@ export default function SettingsPage() {
                         </h3>
 
                         <p className="mt-1 text-sm text-slate-500">
-                          Your authentication token is stored
-                          locally for the current application
-                          session.
+                          Your authentication token is stored securely for the current application session.
                         </p>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* RECENT SESSIONS PREVIEW */}
+                  <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
+                          <Activity size={18} className="text-blue-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-semibold text-slate-900">
+                            Recent Login Activity
+                          </h3>
+                          <p className="text-xs text-slate-500">
+                            {loginHistory.length > 0
+                              ? `${loginHistory.length} login events recorded`
+                              : "Track devices, IP addresses, and login history."}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveSection("sessions")}
+                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition"
+                      >
+                        View Full History →
+                      </button>
+                    </div>
+
+                    {loginHistory.slice(0, 3).map((item) => (
+                      <div
+                        key={item.id}
+                        className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 px-4 py-2.5 text-xs text-slate-600"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Laptop size={15} className="text-slate-500" />
+                          <span className="font-medium text-slate-900">
+                            {item.device || "Desktop"} ({item.browser || "Browser"})
+                          </span>
+                          <span className="font-mono text-slate-400">• {item.ip_address || "127.0.0.1"}</span>
+                        </div>
+                        <span className="text-slate-500">
+                          {formatLoginTime(item.created_at)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </SettingsCard>
+              )}
+
+              {/* SESSIONS & LOGIN ACTIVITY */}
+              {activeSection === "sessions" && (
+                <SettingsCard
+                  title="Login Activity & Active Sessions"
+                  description="Monitor who is logging into your website, active devices, and security audit logs."
+                  icon={Activity}
+                >
+                  <div className="space-y-6">
+                    {/* TOP ACTION BAR */}
+                    <div className="flex items-center justify-between rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                          <ShieldCheck size={20} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">
+                            Session & Security Audit
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            Detailed records of browser types, IP addresses, and timestamps
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={loadActivityData}
+                        disabled={loadingActivity}
+                        className="flex items-center gap-2 rounded-xl bg-white border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm transition disabled:opacity-50"
+                      >
+                        <RefreshCw
+                          size={14}
+                          className={loadingActivity ? "animate-spin text-blue-600" : "text-slate-500"}
+                        />
+                        {loadingActivity ? "Refreshing..." : "Refresh"}
+                      </button>
+                    </div>
+
+                    {/* CURRENT SESSION CARD */}
+                    {loginHistory.find((l) => l.is_current) && (
+                      <div className="rounded-2xl border-2 border-blue-500/30 bg-blue-50/50 p-5">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                              <Laptop size={20} />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-sm font-bold text-slate-900">
+                                  Current Active Session
+                                </h3>
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                  Active Now
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-600 mt-0.5">
+                                {loginHistory.find((l) => l.is_current)?.device} • {loginHistory.find((l) => l.is_current)?.browser}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="inline-block rounded-md bg-white border border-blue-200 px-2.5 py-1 text-xs font-mono text-slate-700 shadow-sm">
+                              {loginHistory.find((l) => l.is_current)?.ip_address || "127.0.0.1"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* RECENT LOGIN SESSIONS LIST */}
+                    <div>
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                          <Clock size={16} className="text-slate-400" />
+                          Recent Login History ({loginHistory.length})
+                        </h3>
+                        <span className="text-xs text-slate-400">
+                          Last 25 login events
+                        </span>
+                      </div>
+
+                      {loginHistory.length === 0 ? (
+                        <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">
+                          {loadingActivity ? "Loading login records..." : "No login records found yet."}
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white overflow-hidden">
+                          {loginHistory.map((item) => {
+                            const isMobile = item.device && (item.device.toLowerCase().includes("mobile") || item.device.toLowerCase().includes("iphone") || item.device.toLowerCase().includes("android"));
+                            const IconComponent = isMobile ? Smartphone : Laptop;
+
+                            return (
+                              <div
+                                key={item.id}
+                                className="flex items-center justify-between p-4 hover:bg-slate-50/60 transition"
+                              >
+                                <div className="flex items-center gap-3.5">
+                                  <div
+                                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                                      item.status === "Success"
+                                        ? "bg-slate-100 text-slate-700"
+                                        : "bg-rose-50 text-rose-600"
+                                    }`}
+                                  >
+                                    <IconComponent size={18} />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-sm font-semibold text-slate-900">
+                                        {item.device || "Unknown Device"}
+                                      </p>
+                                      {item.is_current && (
+                                        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
+                                          This Device
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
+                                      <span>{item.browser || "Browser"}</span>
+                                      <span>•</span>
+                                      <span className="font-mono">{item.ip_address || "127.0.0.1"}</span>
+                                      <span>•</span>
+                                      <span>{item.email}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex flex-col items-end gap-1">
+                                  <span
+                                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                                      item.status === "Success"
+                                        ? "bg-emerald-50 text-emerald-700"
+                                        : "bg-rose-50 text-rose-700"
+                                    }`}
+                                  >
+                                    {item.status === "Success" ? (
+                                      <>
+                                        <CheckCircle2 size={12} />
+                                        Success
+                                      </>
+                                    ) : (
+                                      <>
+                                        <XCircle size={12} />
+                                        Failed ({item.failure_reason || "Invalid credentials"})
+                                      </>
+                                    )}
+                                  </span>
+                                  <span className="text-[11px] text-slate-400">
+                                    {formatLoginTime(item.created_at)}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ALL REGISTERED PLATFORM USERS */}
+                    <div>
+                      <div className="mb-3 flex items-center justify-between">
+                        <div>
+                          <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                            <Users size={16} className="text-slate-400" />
+                            Registered Accounts & Last Seen ({usersActivity.length})
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Overview of all user accounts on this ATS platform and when they last logged in.
+                          </p>
+                        </div>
+                      </div>
+
+                      {usersActivity.length === 0 ? (
+                        <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">
+                          {loadingActivity ? "Loading user accounts..." : "No accounts found."}
+                        </div>
+                      ) : (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {usersActivity.map((usr) => (
+                            <div
+                              key={usr.id}
+                              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-slate-300 transition"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 font-bold text-indigo-600">
+                                    {usr.name ? usr.name.slice(0, 2).toUpperCase() : "US"}
+                                  </div>
+                                  <div>
+                                    <h4 className="text-sm font-bold text-slate-900">
+                                      {usr.name}
+                                    </h4>
+                                    <p className="text-xs text-slate-500">
+                                      {usr.email}
+                                    </p>
+                                  </div>
+                                </div>
+                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                                  {usr.login_count || 0} {usr.login_count === 1 ? "login" : "logins"}
+                                </span>
+                              </div>
+
+                              <div className="mt-3.5 border-t border-slate-100 pt-3 text-xs space-y-1">
+                                <div className="flex items-center justify-between text-slate-500">
+                                  <span>Account Created:</span>
+                                  <span className="font-medium text-slate-700">
+                                    {formatLoginTime(usr.created_at)}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-slate-500">
+                                  <span>Last Login:</span>
+                                  <span className="font-semibold text-slate-900">
+                                    {usr.last_login_at
+                                      ? formatLoginTime(usr.last_login_at)
+                                      : "Never"}
+                                  </span>
+                                </div>
+                                {usr.latest_login && usr.latest_login.device && (
+                                  <div className="flex items-center justify-between text-slate-500">
+                                    <span>Last Device:</span>
+                                    <span className="font-mono text-[11px] text-slate-700">
+                                      {usr.latest_login.device} ({usr.latest_login.ip_address || "127.0.0.1"})
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </SettingsCard>
@@ -841,4 +1166,21 @@ function ToggleRow({
       </button>
     </div>
   );
+}
+
+function formatLoginTime(isoString) {
+  if (!isoString) return "Never";
+  try {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return "Unknown";
+    return date.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return String(isoString);
+  }
 }

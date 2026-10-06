@@ -75,3 +75,15 @@ export function logout() {
       (isSecure ? "; Secure" : "");
   }
 }
+
+export async function getLoginHistory() {
+  return await request("/api/auth/login-history");
+}
+
+export async function getUsersActivity() {
+  return await request("/api/auth/users-activity");
+}
+
+export async function getRecentActivity() {
+  return await request("/api/auth/recent-activity");
+}
