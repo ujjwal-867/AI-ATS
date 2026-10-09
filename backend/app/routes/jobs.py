@@ -14,6 +14,7 @@ from app.schemas.job import (
     JobResponse,
 )
 from app.services.ats_score import extract_skills
+from app.utils.sanitizer import sanitize_text
 
 
 router = APIRouter()
@@ -83,7 +84,7 @@ def get_job(
         .first()
     )
 
-    if not job or (job.user_id and job.user_id != user_id):
+    if not job or job.user_id != user_id:
         raise HTTPException(
             status_code=404,
             detail="Job not found",
@@ -115,13 +116,13 @@ def create_job(
 
     job = Job(
         user_id=user_id,
-        title=job_data.title,
-        company=job_data.company,
-        location=job_data.location,
-        employment_type=job_data.employment_type,
-        experience=job_data.experience,
-        salary=job_data.salary,
-        description=job_data.description,
+        title=sanitize_text(job_data.title),
+        company=sanitize_text(job_data.company),
+        location=sanitize_text(job_data.location),
+        employment_type=sanitize_text(job_data.employment_type),
+        experience=sanitize_text(job_data.experience),
+        salary=sanitize_text(job_data.salary),
+        description=sanitize_text(job_data.description),
         required_skills=skills_json,
         status="Open",
     )
@@ -154,13 +155,18 @@ def update_job(
         .first()
     )
 
-    if not job or (job.user_id and job.user_id != user_id):
+    if not job or job.user_id != user_id:
         raise HTTPException(
             status_code=404,
             detail="Job not found",
         )
 
     update_data = job_data.model_dump(exclude_unset=True)
+
+    # Sanitize string inputs against XSS
+    for field in ["title", "company", "location", "employment_type", "experience", "salary", "description"]:
+        if field in update_data and update_data[field]:
+            update_data[field] = sanitize_text(update_data[field])
 
     # Process skills if provided in update
     if "skills" in update_data or "required_skills" in update_data:
@@ -199,11 +205,12 @@ def delete_job(
         .first()
     )
 
-    if not job or (job.user_id and job.user_id != user_id):
+    if not job or job.user_id != user_id:
         raise HTTPException(
             status_code=404,
             detail="Job not found",
         )
+
 
     try:
         # Delete related matches first

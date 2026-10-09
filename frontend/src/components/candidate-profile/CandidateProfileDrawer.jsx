@@ -117,13 +117,22 @@ export default function CandidateProfileDrawer({
         >
 
           <a
-            href={
-              candidate.resume_url
-              ? `http://127.0.0.1:8000/${candidate.resume_url}`
-              : "#"
-            }
+            href={(() => {
+              if (!candidate?.resume_url) return "#";
+              if (candidate.resume_url.startsWith("http://") || candidate.resume_url.startsWith("https://")) {
+                return candidate.resume_url;
+              }
+              const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+              const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+              const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : "";
+              if (candidate.id) {
+                return `${baseUrl.replace(/\/$/, "")}/api/candidates/${candidate.id}/resume${tokenQuery}`;
+              }
+              return `${baseUrl.replace(/\/$/, "")}/${candidate.resume_url.replace(/^\//, "")}${tokenQuery}`;
+            })()}
             target="_blank"
             rel="noopener noreferrer"
+
             className="
             flex
             flex-1

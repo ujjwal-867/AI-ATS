@@ -41,6 +41,18 @@ async def upload_resume(
             detail="File too large. Maximum size is 10 MB.",
         )
 
+    # Magic byte verification (prevent executable or malicious script spoofing)
+    if extension == ".pdf" and not content.startswith(b"%PDF-"):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file format. The file is not a valid PDF document.",
+        )
+    if extension == ".docx" and not content.startswith(b"PK\x03\x04"):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file format. The file is not a valid DOCX document.",
+        )
+
     filename = f"{uuid.uuid4()}{extension}"
     filepath = UPLOAD_DIR / filename
 
@@ -94,11 +106,13 @@ async def upload_resume(
         if existing.resume_url and existing.resume_url != final_resume_url:
             delete_file(existing.resume_url)
 
-        existing.name = parsed.get("name") or existing.name
-        existing.phone = parsed.get("phone")
-        existing.linkedin = parsed.get("linkedin")
-        existing.github = parsed.get("github")
-        existing.location = parsed.get("location")
+        from app.utils.sanitizer import sanitize_text, sanitize_url
+
+        existing.name = sanitize_text(parsed.get("name") or existing.name)
+        existing.phone = sanitize_text(parsed.get("phone"))
+        existing.linkedin = sanitize_url(parsed.get("linkedin"))
+        existing.github = sanitize_url(parsed.get("github"))
+        existing.location = sanitize_text(parsed.get("location"))
 
         existing.resume_url = final_resume_url
         existing.resume_text = parsed.get("resume_text")
@@ -163,12 +177,12 @@ async def upload_resume(
 
     candidate = Candidate(
         user_id=user_id,
-        name=parsed.get("name") or "Unknown",
+        name=sanitize_text(parsed.get("name") or "Unknown"),
         email=parsed["email"],
-        phone=parsed.get("phone"),
-        linkedin=parsed.get("linkedin"),
-        github=parsed.get("github"),
-        location=parsed.get("location"),
+        phone=sanitize_text(parsed.get("phone")),
+        linkedin=sanitize_url(parsed.get("linkedin")),
+        github=sanitize_url(parsed.get("github")),
+        location=sanitize_text(parsed.get("location")),
         summary=None,
         resume_url=final_resume_url,
         resume_text=parsed.get("resume_text"),

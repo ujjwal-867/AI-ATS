@@ -21,8 +21,17 @@ export default function ResumeViewer({
   }
 
 
-  const url = `${API_URL}/${resumeUrl}`;
+  const getUrl = () => {
+    if (!resumeUrl) return "#";
+    if (resumeUrl.startsWith("http://") || resumeUrl.startsWith("https://")) {
+      return resumeUrl;
+    }
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : "";
+    return `${API_URL.replace(/\/$/, "")}/${resumeUrl.replace(/^\//, "")}${tokenQuery}`;
+  };
 
+  const url = getUrl();
 
   return (
 
@@ -65,6 +74,8 @@ export default function ResumeViewer({
         <a
           href={url}
           target="_blank"
+          rel="noopener noreferrer"
+
           className="
           flex
           items-center

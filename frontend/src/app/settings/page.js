@@ -67,13 +67,17 @@ export default function SettingsPage() {
   const [loginHistory, setLoginHistory] = useState([]);
   const [usersActivity, setUsersActivity] = useState([]);
   const [loadingActivity, setLoadingActivity] = useState(false);
+  const currentUser = typeof window !== "undefined" ? getCurrentUser() : null;
+  const isAdmin = currentUser?.role === "admin";
 
   async function loadActivityData() {
     try {
       setLoadingActivity(true);
+      const user = getCurrentUser();
+      const isAdmin = user?.role === "admin";
       const [history, users] = await Promise.all([
         getLoginHistory().catch(() => []),
-        getUsersActivity().catch(() => []),
+        isAdmin ? getUsersActivity().catch(() => []) : Promise.resolve([]),
       ]);
       setLoginHistory(Array.isArray(history) ? history : []);
       setUsersActivity(Array.isArray(users) ? users : []);
@@ -83,6 +87,7 @@ export default function SettingsPage() {
       setLoadingActivity(false);
     }
   }
+
 
   useEffect(() => {
     if (activeSection === "security" || activeSection === "sessions") {
@@ -731,81 +736,84 @@ export default function SettingsPage() {
                       )}
                     </div>
 
-                    {/* ALL REGISTERED PLATFORM USERS */}
-                    <div>
-                      <div className="mb-3 flex items-center justify-between">
-                        <div>
-                          <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                            <Users size={16} className="text-slate-400" />
-                            Registered Accounts & Last Seen ({usersActivity.length})
-                          </h3>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            Overview of all user accounts on this ATS platform and when they last logged in.
-                          </p>
+                    {/* ALL REGISTERED PLATFORM USERS (ADMIN ONLY) */}
+                    {isAdmin && (
+                      <div>
+                        <div className="mb-3 flex items-center justify-between">
+                          <div>
+                            <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                              <Users size={16} className="text-slate-400" />
+                              Registered Accounts & Last Seen ({usersActivity.length})
+                            </h3>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              Overview of all user accounts on this ATS platform and when they last logged in.
+                            </p>
+                          </div>
                         </div>
-                      </div>
 
-                      {usersActivity.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">
-                          {loadingActivity ? "Loading user accounts..." : "No accounts found."}
-                        </div>
-                      ) : (
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          {usersActivity.map((usr) => (
-                            <div
-                              key={usr.id}
-                              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-slate-300 transition"
-                            >
-                              <div className="flex items-start justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 font-bold text-indigo-600">
-                                    {usr.name ? usr.name.slice(0, 2).toUpperCase() : "US"}
+                        {usersActivity.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">
+                            {loadingActivity ? "Loading user accounts..." : "No accounts found."}
+                          </div>
+                        ) : (
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {usersActivity.map((usr) => (
+                              <div
+                                key={usr.id}
+                                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-slate-300 transition"
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 font-bold text-indigo-600">
+                                      {usr.name ? usr.name.slice(0, 2).toUpperCase() : "US"}
+                                    </div>
+                                    <div>
+                                      <h4 className="text-sm font-bold text-slate-900">
+                                        {usr.name}
+                                      </h4>
+                                      <p className="text-xs text-slate-500">
+                                        {usr.email}
+                                      </p>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <h4 className="text-sm font-bold text-slate-900">
-                                      {usr.name}
-                                    </h4>
-                                    <p className="text-xs text-slate-500">
-                                      {usr.email}
-                                    </p>
-                                  </div>
-                                </div>
-                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-                                  {usr.login_count || 0} {usr.login_count === 1 ? "login" : "logins"}
-                                </span>
-                              </div>
-
-                              <div className="mt-3.5 border-t border-slate-100 pt-3 text-xs space-y-1">
-                                <div className="flex items-center justify-between text-slate-500">
-                                  <span>Account Created:</span>
-                                  <span className="font-medium text-slate-700">
-                                    {formatLoginTime(usr.created_at)}
+                                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                                    {usr.login_count || 0} {usr.login_count === 1 ? "login" : "logins"}
                                   </span>
                                 </div>
-                                <div className="flex items-center justify-between text-slate-500">
-                                  <span>Last Login:</span>
-                                  <span className="font-semibold text-slate-900">
-                                    {usr.last_login_at
-                                      ? formatLoginTime(usr.last_login_at)
-                                      : "Never"}
-                                  </span>
-                                </div>
-                                {usr.latest_login && usr.latest_login.device && (
+
+                                <div className="mt-3.5 border-t border-slate-100 pt-3 text-xs space-y-1">
                                   <div className="flex items-center justify-between text-slate-500">
-                                    <span>Last Device:</span>
-                                    <span className="font-mono text-[11px] text-slate-700">
-                                      {usr.latest_login.device} ({usr.latest_login.ip_address || "127.0.0.1"})
+                                    <span>Account Created:</span>
+                                    <span className="font-medium text-slate-700">
+                                      {formatLoginTime(usr.created_at)}
                                     </span>
                                   </div>
-                                )}
+                                  <div className="flex items-center justify-between text-slate-500">
+                                    <span>Last Login:</span>
+                                    <span className="font-semibold text-slate-900">
+                                      {usr.last_login_at
+                                        ? formatLoginTime(usr.last_login_at)
+                                        : "Never"}
+                                    </span>
+                                  </div>
+                                  {usr.latest_login && usr.latest_login.device && (
+                                    <div className="flex items-center justify-between text-slate-500">
+                                      <span>Last Device:</span>
+                                      <span className="font-mono text-[11px] text-slate-700">
+                                        {usr.latest_login.device} ({usr.latest_login.ip_address || "127.0.0.1"})
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </SettingsCard>
+
               )}
 
               {/* NOTIFICATIONS */}

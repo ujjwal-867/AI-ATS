@@ -21,6 +21,7 @@ class UserResponse(BaseModel):
     created_at: Optional[datetime] = None
     last_login_at: Optional[datetime] = None
     login_count: Optional[int] = 0
+    role: Optional[str] = "recruiter"
 
     class Config:
         from_attributes = True

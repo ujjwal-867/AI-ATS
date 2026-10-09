@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_current_admin
+from app.config import settings
 from app.models.user import User
 from app.models.login_log import LoginLog
 from app.schemas.user import (
@@ -18,6 +19,7 @@ from app.utils.security import (
     create_access_token,
 )
 from app.utils.device_detector import get_request_metadata
+from app.utils.sanitizer import sanitize_text
 
 router = APIRouter()
 
@@ -54,10 +56,18 @@ def register(
             detail="User already exists",
         )
 
+    # Determine initial role: admin if matches ADMIN_EMAIL or if first user on platform
+    is_admin = (
+        (settings.ADMIN_EMAIL and clean_email.lower() == settings.ADMIN_EMAIL.strip().lower())
+        or db.query(User).count() == 0
+    )
+    role = "admin" if is_admin else "recruiter"
+
     new_user = User(
-        name=user.name.strip(),
+        name=sanitize_text(user.name.strip()),
         email=clean_email,
         password_hash=hash_password(user.password),
+        role=role,
     )
 
     db.add(new_user)
@@ -65,6 +75,7 @@ def register(
     db.refresh(new_user)
 
     return UserResponse.model_validate(new_user)
+
 
 
 # =========================================================
@@ -139,16 +150,24 @@ def login(
     )
     db.add(success_log)
 
+    # Auto-upgrade to admin if matching ADMIN_EMAIL
+    if settings.ADMIN_EMAIL and existing_user.email.lower() == settings.ADMIN_EMAIL.strip().lower():
+        if getattr(existing_user, "role", "recruiter") != "admin":
+            existing_user.role = "admin"
+
     # Update user login count & last seen timestamp
     existing_user.last_login_at = datetime.now(timezone.utc)
     existing_user.login_count = (existing_user.login_count or 0) + 1
     db.commit()
     db.refresh(existing_user)
 
+    user_role = getattr(existing_user, "role", "recruiter") or "recruiter"
+
     token = create_access_token(
         {
             "user_id": existing_user.id,
             "email": existing_user.email,
+            "role": user_role,
         }
     )
 
@@ -157,6 +176,7 @@ def login(
         "token_type": "bearer",
         "user": UserResponse.model_validate(existing_user),
     }
+
 
 
 # =========================================================
@@ -212,7 +232,7 @@ def get_login_history(
 @router.get("/users-activity")
 def get_users_activity(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    admin: dict = Depends(get_current_admin),
 ):
     users = db.query(User).order_by(User.created_at.desc()).all()
 
@@ -232,6 +252,7 @@ def get_users_activity(
             "id": u.id,
             "name": u.name,
             "email": u.email,
+            "role": getattr(u, "role", "recruiter") or "recruiter",
             "created_at": u.created_at,
             "last_login_at": u.last_login_at,
             "login_count": u.login_count or 0,
@@ -253,7 +274,7 @@ def get_users_activity(
 @router.get("/recent-activity", response_model=list[LoginLogResponse])
 def get_recent_activity(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    admin: dict = Depends(get_current_admin),
 ):
     logs = (
         db.query(LoginLog)

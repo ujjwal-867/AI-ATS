@@ -1,11 +1,15 @@
 from datetime import datetime, timezone
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
-from app.dependencies import get_current_user
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
+from app.dependencies import get_current_user
 from app.models.candidate import Candidate
+from app.utils.sanitizer import sanitize_text, sanitize_url
 
 from app.schemas.candidate import (
     CandidateCreate,
@@ -79,13 +83,13 @@ def create_candidate(
         )
 
     new_candidate = Candidate(
-        name=candidate.name,
+        name=sanitize_text(candidate.name),
         email=clean_email,
-        phone=candidate.phone,
-        linkedin=candidate.linkedin,
-        github=candidate.github,
-        location=candidate.location,
-        summary=candidate.summary,
+        phone=sanitize_text(candidate.phone),
+        linkedin=sanitize_url(candidate.linkedin),
+        github=sanitize_url(candidate.github),
+        location=sanitize_text(candidate.location),
+        summary=sanitize_text(candidate.summary),
         resume_url=candidate.resume_url,
         resume_text=candidate.resume_text,
         skills=candidate.skills,
@@ -105,6 +109,7 @@ def create_candidate(
     db.refresh(new_candidate)
 
     return new_candidate
+
 
 
 # =========================================================
@@ -217,6 +222,81 @@ def get_candidate(
 
 
 # =========================================================
+# GET CANDIDATE RESUME (AUTHENTICATED & TENANT-PROTECTED)
+# =========================================================
+
+@router.get("/{candidate_id}/resume")
+def get_candidate_resume(
+    candidate_id: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    candidate = (
+        db.query(Candidate)
+        .filter(Candidate.id == candidate_id)
+        .first()
+    )
+
+    if not candidate:
+        raise HTTPException(
+            status_code=404,
+            detail="Candidate not found",
+        )
+
+    # Multi-tenant authorization check: owner or platform admin
+    is_owner = candidate.user_id == current_user["user_id"]
+    is_admin = current_user.get("role") == "admin"
+    if not is_owner and not is_admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden: You do not have permission to access this candidate's resume",
+        )
+
+    if not candidate.resume_url:
+        raise HTTPException(
+            status_code=404,
+            detail="No resume file available for this candidate",
+        )
+
+    # Cloud Storage URL (e.g. Supabase Storage)
+    if candidate.resume_url.startswith("http://") or candidate.resume_url.startswith("https://"):
+        return RedirectResponse(url=candidate.resume_url)
+
+    # Local file: strictly prevent path traversal
+    upload_root = Path(settings.UPLOAD_DIR).resolve()
+    target_path = Path(candidate.resume_url).resolve()
+
+    try:
+        target_path.relative_to(upload_root)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid resume file path detected",
+        )
+
+    if not target_path.exists() or not target_path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="Resume file does not exist on disk",
+        )
+
+    media_type = (
+        "application/pdf"
+        if target_path.suffix.lower() == ".pdf"
+        else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+
+    clean_filename = f"{candidate.name.replace(' ', '_')}_Resume{target_path.suffix}"
+
+    return FileResponse(
+        path=str(target_path),
+        media_type=media_type,
+        filename=clean_filename,
+        content_disposition_type="inline",
+    )
+
+
+# =========================================================
 # UPDATE CANDIDATE
 # =========================================================
 
@@ -245,6 +325,15 @@ def update_candidate(
     update_data = candidate_data.model_dump(
         exclude_unset=True
     )
+
+    # Sanitize string inputs against XSS
+    for field in ["name", "phone", "location", "summary"]:
+        if field in update_data and update_data[field]:
+            update_data[field] = sanitize_text(update_data[field])
+    for field in ["linkedin", "github"]:
+        if field in update_data and update_data[field]:
+            update_data[field] = sanitize_url(update_data[field])
+
 
     # --------------------------------------------------
     # Validate and normalize email if provided

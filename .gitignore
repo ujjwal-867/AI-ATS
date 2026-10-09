@@ -1,16 +1,22 @@
+# Environment files (secrets & API keys)
 .env
 .env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# OS & Editor files
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
 
+# Dependencies
 node_modules/
-.next/
-
-venv/
-__pycache__/
-
-uploads/# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
 /node_modules
 /.pnp
 .pnp.*
@@ -20,36 +26,41 @@ uploads/# See https://help.github.com/articles/ignoring-files/ for more about ig
 !.yarn/releases
 !.yarn/versions
 
-# testing
+# Python virtual environments & bytecode
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+
+# Uploaded Files & Resumes
+uploads/
+/uploads/
+backend/uploads/
+/backend/uploads/
+
+# Build artifacts & caches
+.next/
+/out/
+/build
+*.tsbuildinfo
+next-env.d.ts
 /coverage
 
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+# Logs & Debugging
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
-!.env.example
+# Keys & Certificates
+*.pem
+*.key
+*.cert
+*.crt
 
-# vercel
+# Deployment
 .vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# Backend uploaded resumes
-/backend/uploads/

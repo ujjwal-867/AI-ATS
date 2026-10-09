@@ -1204,10 +1204,12 @@ function CandidateModal({
             {candidate.resume_url && (
               <a
                 href={getResumeUrl(
-                  candidate.resume_url
+                  candidate.resume_url,
+                  candidate.id
                 )}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
+
                 className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
               >
                 <FileText size={16} />
@@ -2179,7 +2181,7 @@ function getSkills(skills) {
   return [];
 }
 
-function getResumeUrl(resumeUrl) {
+function getResumeUrl(resumeUrl, candidateId) {
   if (!resumeUrl) return "#";
 
   if (
@@ -2193,11 +2195,18 @@ function getResumeUrl(resumeUrl) {
     process.env.NEXT_PUBLIC_API_URL ||
     "http://127.0.0.1:8000";
 
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : "";
+
+  if (candidateId) {
+    return `${baseUrl.replace(/\/$/, "")}/api/candidates/${candidateId}/resume${tokenQuery}`;
+  }
+
   return `${baseUrl.replace(
     /\/$/,
     ""
   )}/${resumeUrl.replace(
     /^\//,
     ""
-  )}`;
+  )}${tokenQuery}`;
 }
