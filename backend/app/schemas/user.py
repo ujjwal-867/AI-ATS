@@ -1,17 +1,17 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict, Field
 
 
 class UserRegister(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1, max_length=100)
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=6, max_length=128)
 
 
 class UserLogin(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=1)
 
 
 class UserResponse(BaseModel):
@@ -19,12 +19,12 @@ class UserResponse(BaseModel):
     name: str
     email: EmailStr
     created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     last_login_at: Optional[datetime] = None
     login_count: Optional[int] = 0
     role: Optional[str] = "recruiter"
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LoginLogResponse(BaseModel):
@@ -39,5 +39,4 @@ class LoginLogResponse(BaseModel):
     created_at: Optional[datetime] = None
     is_current: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
